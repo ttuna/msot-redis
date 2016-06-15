@@ -20,8 +20,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _WINSOCKAPI_
 #include <Windows.h>
 #include <errno.h>
+#include "win32fixes.h"
 
 #ifdef __cplusplus
 extern "C"

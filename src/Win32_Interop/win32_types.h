@@ -34,10 +34,9 @@
  * It is used by the CRT internally (but not by Redis), so we leave it as 32-bit.
  */
 
-typedef __int64     off_t;
-typedef long        _off_t;
-
 #ifndef _OFF_T_DEFINED
+typedef __int64		off_t;
+typedef long        _off_t;
 #define _OFF_T_DEFINED
 #endif
 

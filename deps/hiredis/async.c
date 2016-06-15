@@ -30,6 +30,7 @@
  */
 #ifdef _WIN32
 #include "win32_hiredis.h"
+#include "../../src/Win32_Interop/win32fixes.h"
 #include "../../src/Win32_Interop/win32_wsiocp2.h"
 #endif
 #include "fmacros.h"

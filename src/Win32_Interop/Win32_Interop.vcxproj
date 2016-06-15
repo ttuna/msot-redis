@@ -1,6 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_v90|Win32">
+      <Configuration>Debug_v90</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_v90|x64">
+      <Configuration>Debug_v90</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -82,13 +90,25 @@ mc.exe -A -b -c -h . -r resources EventLog.mc
 rc.exe -foresources/EventLog.res resources/EventLog.rc
 link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
 </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug_v90|x64'">md resources
+mc.exe -A -b -c -h . -r resources EventLog.mc
+rc.exe -foresources/EventLog.res resources/EventLog.rc
+link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
+</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">md resources
 mc.exe -A -b -c -h . -r resources EventLog.mc
 rc.exe -foresources/EventLog.res resources/EventLog.rc
 link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
 </Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug_v90|Win32'">md resources
+mc.exe -A -b -c -h . -r resources EventLog.mc
+rc.exe -foresources/EventLog.res resources/EventLog.rc
+link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
+</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EventLog.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug_v90|x64'">EventLog.h</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EventLog.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug_v90|Win32'">EventLog.h</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">md resources
 mc.exe -A -b -c -h . -r resources EventLog.mc
 rc.exe -foresources/EventLog.res resources/EventLog.rc
@@ -116,10 +136,22 @@ link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_v90|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_v90|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v90</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -142,7 +174,13 @@ link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_v90|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_v90|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
@@ -153,6 +191,10 @@ link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_v90|Win32'">
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -180,6 +222,26 @@ link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
       <AdditionalOptions>/MACHINE:X64 %(AdditionalOptions)</AdditionalOptions>
     </Lib>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_v90|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_STATIC;USE_JEMALLOC;_OFF_T_DEFINED;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);LACKS_STDLIB_H;_CRT_SECURE_NO_WARNINGS;PSAPI_VERSION=1</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\deps\lua\src;$(ProjectDir)..\..\deps\jemalloc-win\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/MACHINE:X64 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
@@ -187,6 +249,29 @@ link.exe -dll -noentry resources/EventLog.res -out:$(TargetDir)EventLog.dll
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USE_STATIC;USE_JEMALLOC;_OFF_T_DEFINED;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);LACKS_STDLIB_H;_CRT_SECURE_NO_WARNINGS;PSAPI_VERSION=1;_WIN32_WINNT=0x0501</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\deps\lua\src;$(ProjectDir)..\..\deps\jemalloc-win\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+    <CustomBuild>
+      <Command>
+      </Command>
+    </CustomBuild>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_v90|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>USE_STATIC;USE_JEMALLOC;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);LACKS_STDLIB_H;_CRT_SECURE_NO_WARNINGS;PSAPI_VERSION=1;_WIN32_WINNT=0x0501</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\deps\lua\src;$(ProjectDir)..\..\deps\jemalloc-win\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>

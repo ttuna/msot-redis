@@ -23,6 +23,9 @@
 #ifndef WIN32_HIREDIS_H
 #define WIN32_HIREDIS_H
 
+//#define WINVER 0x0601
+//#define _WIN32_WINNT 0x0601
+
 #include "../../src/Win32_Interop/Win32_Portability.h"
 #include "../../src/Win32_Interop/Win32_types_hiredis.h"
 #include "../../src/Win32_Interop/Win32_Error.h"

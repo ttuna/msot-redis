@@ -23,7 +23,11 @@
 #ifndef WIN32_INTEROP_ERROR_H
 #define WIN32_INTEROP_ERROR_H
 
+#if _MSC_VER >= 1700
 #include <stdint.h>
+#else
+#include "../../extern/include/stdint.h"
+#endif
 
 #ifdef __cplusplus
 extern "C"

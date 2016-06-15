@@ -45,8 +45,13 @@
 #pragma once
 #endif
 
-#if WINVER <= _WIN32_WINNT_WS03
+//#define WINVER 0x0601
+//#define _WIN32_WINNT 0x0601
+
+#if WINVER <= _WIN32_WINNT_WS03 || _MSC_VER < 1700
 #include "win32_winapifamily.h"
+#include "win32fixes.h"
+#include "../../extern/include/sal.h"
 #else
 #include <winapifamily.h>
 #endif
@@ -94,6 +99,36 @@
 //
 
 #define EAI_NODATA      EAI_NONAME
+
+#if defined _MSC_VER && _MSC_VER < 1700
+typedef struct addrinfo
+{
+	int                 ai_flags;       // AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST
+	int                 ai_family;      // PF_xxx
+	int                 ai_socktype;    // SOCK_xxx
+	int                 ai_protocol;    // 0 or IPPROTO_xxx for IPv4 and IPv6
+	size_t              ai_addrlen;     // Length of ai_addr
+	char *              ai_canonname;   // Canonical name for nodename
+	struct sockaddr *   ai_addr;        // Binary address
+	struct addrinfo *   ai_next;        // Next structure in linked list
+}
+ADDRINFOA, *PADDRINFOA;
+
+typedef struct addrinfoexA
+{
+	int                 ai_flags;       // AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST
+	int                 ai_family;      // PF_xxx
+	int                 ai_socktype;    // SOCK_xxx
+	int                 ai_protocol;    // 0 or IPPROTO_xxx for IPv4 and IPv6
+	size_t              ai_addrlen;     // Length of ai_addr
+	char               *ai_canonname;   // Canonical name for nodename
+	struct sockaddr    *ai_addr;        // Binary address
+	void               *ai_blob;
+	size_t              ai_bloblen;
+	LPGUID              ai_provider;
+	struct addrinfoexA *ai_next;        // Next structure in linked list
+} ADDRINFOEXA, *PADDRINFOEXA, *LPADDRINFOEXA;
+#endif
 
 //  Switchable definition for GetAddrInfo()
 
