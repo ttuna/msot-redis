@@ -14,9 +14,9 @@
 #define isnan _isnan
 #define isfinite _finite
 #define isinf(x) (!_finite(x))
-#else
-#include <math.h>
 #endif
+#include <math.h>
+
 
 static _locale_t clocale = NULL;
 double wstrtod(const char *nptr, char **eptr) {

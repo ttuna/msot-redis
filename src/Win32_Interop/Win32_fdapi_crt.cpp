@@ -20,8 +20,8 @@
 * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "Win32_fdapi_crt.h"
-#include "Win32_Common.h"
+#include "win32_fdapi_crt.h"
+#include "win32_common.h"
 #include <io.h>
 #include <stdlib.h>
 

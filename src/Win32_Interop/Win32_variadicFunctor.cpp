@@ -22,7 +22,7 @@
 
 #include "win32_types.h"
 
-#include "Win32_variadicFunctor.h"
+#include "Win32_variadicfunctor.h"
 
 #include <windows.h>
 #include <stdexcept>
@@ -41,15 +41,23 @@ LPVOID DLLMap::getProcAddress(string dll, string functionName)
 	if (find(dll) == end()) {
 		HMODULE mod = LoadLibraryA(dll.c_str());
 		if (mod == NULL) {
+#if _MSC_VER >= 1800
 			throw system_error(GetLastError(), system_category(), "LoadLibrary failed");
+#else
+			throw runtime_error("LoadLibrary failed");
+#endif
 		}
 		(*this)[dll] = mod;
 	}
 
 	HMODULE mod = (*this)[dll];
 	LPVOID fp = GetProcAddress(mod, functionName.c_str());
-	if (fp == nullptr) {
+	if (fp == 0) {
+#if _MSC_VER >= 1800
 		throw system_error(GetLastError(), system_category(), "LoadLibrary failed");
+#else
+		throw runtime_error("LoadLibrary failed");
+#endif
 	}
 
 	return fp;
@@ -57,7 +65,7 @@ LPVOID DLLMap::getProcAddress(string dll, string functionName)
 
 DLLMap::~DLLMap()
 {
-	for each(auto modPair in (*this))
+	for each(std::pair<std::string, HMODULE> modPair in (*this))
 	{
 		FreeLibrary(modPair.second);
 	}

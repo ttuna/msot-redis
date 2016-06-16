@@ -33,7 +33,6 @@ typedef unsigned long nfds_t;
 // Important! Do not include Winsock API definitions to avoid conflicts
 // with API entry points defined below.
 #define INCL_WINSOCK_API_PROTOTYPES 0
-#include "win32_types.h"
 #include <WinSock2.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -41,7 +40,8 @@ typedef unsigned long nfds_t;
 
 // Including a version of this file modified to eliminate prototype
 // definitions not removed by INCL_WINSOCK_API_PROTOTYPES
-#include "WS2tcpip.h"
+#include "ws2tcpip.h"
+#include "win32_types.h"
 
 // Reintroducing the inline APIs removed by INCL_WINSOCK_API_PROTOTYPES
 // that Redis is using
@@ -144,9 +144,15 @@ typedef int (*fdapi_fstat)(int fd, struct __stat64 *buffer);
 typedef BOOL fnWSIOCP_CloseSocketStateRFD(int rfd);
 
 // access() mode definitions 
+#ifndef X_OK
 #define X_OK    0
+#endif
+#ifndef W_OK
 #define W_OK    2
+#endif
+#ifndef R_OK
 #define R_OK    4
+#endif
 
 #ifdef __cplusplus
 extern "C"

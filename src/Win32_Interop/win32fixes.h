@@ -21,14 +21,14 @@
 #define NOGDI
 #define __USE_W32_SOCKETS
 
-#include "win32_types.h"
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>      // for _O_BINARY
 #include <limits.h>     // for INT_MAX
 
-#include "Win32_APIs.h"
-#include "Win32_FDAPI.h"    
+#include "win32_types.h"
+#include "win32_fdapi.h"    
+#include "win32_apis.h"
 
 #define WNOHANG 1
 
@@ -40,89 +40,6 @@
 
 #define MAP_SHARED 1
 #define MAP_PRIVATE 2
-
-#if _MSC_VER < 1700
-#ifndef ECONNRESET
-#define ECONNRESET WSAECONNRESET
-#endif
-
-#ifndef EINPROGRESS
-#define EINPROGRESS WSAEINPROGRESS
-#endif
-
-#ifndef ETIMEDOUT
-#define ETIMEDOUT WSAETIMEDOUT
-#endif
-
-#ifndef EHOSTUNREACH
-#define EHOSTUNREACH WSAEHOSTUNREACH
-#endif
-
-#ifndef EADDRINUSE
-#define EADDRINUSE WSAEADDRINUSE
-#endif
-
-#ifndef EADDRNOTAVAIL
-#define EADDRNOTAVAIL WSAEADDRNOTAVAIL
-#endif
-
-#ifndef EAFNOSUPPORT
-#define EAFNOSUPPORT WSAEAFNOSUPPORT
-#endif
-
-#ifndef EALREADY
-#define EALREADY WSAEALREADY
-#endif
-
-#ifndef ECANCELED
-#define ECANCELED WSAECANCELLED
-#endif
-
-#ifndef ECONNABORTED
-#define ECONNABORTED WSAECONNABORTED
-#endif
-
-#ifndef ECONNREFUSED
-#define ECONNREFUSED WSAECONNREFUSED
-#endif
-
-#ifndef EISCONN
-#define EISCONN WSAEISCONN
-#endif
-
-#ifndef ELOOP
-#define ELOOP WSAELOOP
-#endif
-
-#ifndef EMSGSIZE
-#define EMSGSIZE WSAEMSGSIZE
-#endif
-
-#ifndef ENETUNREACH
-#define ENETUNREACH WSAENETUNREACH
-#endif
-
-#ifndef ENOBUFS
-#define ENOBUFS WSAENOBUFS
-#endif
-
-#ifndef ENOTCONN
-#define ENOTCONN WSAENOTCONN
-#endif
-
-#ifndef ENOTSUP
-#define ENOTSUP ERROR_NOT_SUPPORTED
-#endif
-
-#ifndef ENOTCONN
-#define ENOTCONN WSAENOTCONN
-#endif
-
-#ifndef EPROTONOSUPPORT
-#define EPROTONOSUPPORT WSAEPROTONOSUPPORT
-#endif
-
-#endif
 
 #ifdef __cplusplus
 extern "C"

@@ -26,8 +26,12 @@
 #include <exception>
 #include <stdexcept>
 #include <string>
+
+#if _MSC_VER >= 1800
 #include <cstdint>
-using namespace std;
+#else
+#include "../../extern/include/stdint.h"
+#endif
 
 typedef class SmartHandle
 {
@@ -56,7 +60,7 @@ public:
             throw std::runtime_error("invalid handle passed to constructor");
     }
 
-    HANDLE Assign(HANDLE h, string errorToReport)
+    HANDLE Assign(HANDLE h, std::string errorToReport)
     {
         Close();
         m_handle = h;
@@ -65,7 +69,7 @@ public:
         return h;
     }
 
-    SmartHandle(HANDLE handle, string errorToReport)
+    SmartHandle(HANDLE handle, std::string errorToReport)
     {
         Close();
         m_handle = handle;
@@ -77,14 +81,22 @@ public:
     {
         Close();
         if (!DuplicateHandle(parentProcess, parentHandleToDuplicate, GetCurrentProcess(), &m_handle, 0, FALSE, DUPLICATE_SAME_ACCESS))
+#if _MSC_VER >= 1800
             throw std::system_error(GetLastError(), system_category(), "handle duplication failed");
+#else
+			throw std::runtime_error("handle duplication failed");
+#endif
         return m_handle;
     }
 
     SmartHandle(HANDLE parentProcess, HANDLE parentHandleToDuplicate)
     {
         if (!DuplicateHandle(parentProcess, parentHandleToDuplicate, GetCurrentProcess(), &m_handle, 0, FALSE, DUPLICATE_SAME_ACCESS))
+#if _MSC_VER >= 1800
             throw std::system_error(GetLastError(), system_category(), "handle duplication failed");
+#else
+			throw std::runtime_error("handle duplication failed");
+#endif
     }
 
     operator PHANDLE() {
@@ -260,7 +272,11 @@ public:
         m_handle = CreateFileMapping(mmFile, NULL, protectionFlags, maxSizeHigh, maxSizeLow, NULL);
         if (Invalid()) {
             if (IsDebuggerPresent()) DebugBreak();
+#if _MSC_VER >= 1800
             throw std::system_error(GetLastError(), system_category(), errorToReport);
+#else
+			throw std::runtime_error(errorToReport);
+#endif
         }
 
         SYSTEM_INFO si;
@@ -273,7 +289,11 @@ public:
     {
         m_handle = CreateFileMapping(mmFile, NULL, protectionFlags, maxSizeHigh, maxSizeLow, NULL);
         if (Invalid()) {
+#if _MSC_VER >= 1800
             throw std::system_error(GetLastError(), system_category(), errorToReport);
+#else
+			throw std::runtime_error(errorToReport);
+#endif
         }
 
         SYSTEM_INFO si;
@@ -293,7 +313,11 @@ public:
     {
         m_handle = CreateFileMapping(mmFile, NULL, protectionFlags, maxSizeHigh, maxSizeLow, NULL);
         if (Invalid()) {
+#if _MSC_VER >= 1800
             throw std::system_error(GetLastError(), system_category(), errorToReport);
+#else
+			throw std::runtime_error(errorToReport);
+#endif
         }
     }
 

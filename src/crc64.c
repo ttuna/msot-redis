@@ -37,7 +37,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE. */
 
+#if !defined _WIN32 || _MSC_VER >= 1800
 #include <stdint.h>
+#else
+#include "../../../extern/include/stdint.h"
+#endif
 
 static const uint64_t crc64_tab[256] = {
     UINT64_C(0x0000000000000000), UINT64_C(0x7ad870c830358979),

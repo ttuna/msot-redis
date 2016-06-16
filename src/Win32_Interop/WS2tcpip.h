@@ -45,20 +45,14 @@
 #pragma once
 #endif
 
-//#define WINVER 0x0601
-//#define _WIN32_WINNT 0x0601
-
-#if WINVER <= _WIN32_WINNT_WS03 || _MSC_VER < 1700
+#if WINVER <= _WIN32_WINNT_WS03 || _MSC_VER < 1800
 #include "win32_winapifamily.h"
-#include "win32fixes.h"
-#include "../../extern/include/sal.h"
 #else
 #include <winapifamily.h>
 #endif
 
 #pragma region Desktop Family
 #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-
 
 #include <winsock2.h>
 #include <ws2ipdef.h>
@@ -100,37 +94,82 @@
 
 #define EAI_NODATA      EAI_NONAME
 
-#if defined _MSC_VER && _MSC_VER < 1700
-typedef struct addrinfo
-{
-	int                 ai_flags;       // AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST
-	int                 ai_family;      // PF_xxx
-	int                 ai_socktype;    // SOCK_xxx
-	int                 ai_protocol;    // 0 or IPPROTO_xxx for IPv4 and IPv6
-	size_t              ai_addrlen;     // Length of ai_addr
-	char *              ai_canonname;   // Canonical name for nodename
-	struct sockaddr *   ai_addr;        // Binary address
-	struct addrinfo *   ai_next;        // Next structure in linked list
-}
-ADDRINFOA, *PADDRINFOA;
+//  Switchable definition for GetAddrInfo()
 
-typedef struct addrinfoexA
-{
-	int                 ai_flags;       // AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST
-	int                 ai_family;      // PF_xxx
-	int                 ai_socktype;    // SOCK_xxx
-	int                 ai_protocol;    // 0 or IPPROTO_xxx for IPv4 and IPv6
-	size_t              ai_addrlen;     // Length of ai_addr
-	char               *ai_canonname;   // Canonical name for nodename
-	struct sockaddr    *ai_addr;        // Binary address
-	void               *ai_blob;
-	size_t              ai_bloblen;
-	LPGUID              ai_provider;
-	struct addrinfoexA *ai_next;        // Next structure in linked list
-} ADDRINFOEXA, *PADDRINFOEXA, *LPADDRINFOEXA;
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-//  Switchable definition for GetAddrInfo()
+#if defined _WIN32 && _MSC_VER < 1800
+	typedef struct addrinfoW {
+	  int              ai_flags;
+	  int              ai_family;
+	  int              ai_socktype;
+	  int              ai_protocol;
+	  size_t           ai_addrlen;
+	  PWSTR            ai_canonname;
+	  struct sockaddr  *ai_addr;
+	  struct addrinfoW  *ai_next;
+	} ADDRINFOW, *PADDRINFOW;
+
+	typedef struct addrinfo {
+	  int             ai_flags;
+	  int             ai_family;
+	  int             ai_socktype;
+	  int             ai_protocol;
+	  size_t          ai_addrlen;
+	  char            *ai_canonname;
+	  struct sockaddr  *ai_addr;
+	  struct addrinfo  *ai_next;
+	} ADDRINFOA, *PADDRINFOA;
+
+	typedef struct addrinfoExW {
+	  int               ai_flags;
+	  int               ai_family;
+	  int               ai_socktype;
+	  int               ai_protocol;
+	  size_t            ai_addrlen;
+	  PCTSTR            ai_canonname;
+	  struct sockaddr	*ai_addr;
+	  void              *ai_blob;
+	  size_t            ai_bloblen;
+	  LPGUID            ai_provider;
+	  struct addrinfoex *ai_next;
+	} ADDRINFOEXW, *PADDRINFOEXW;
+
+	typedef struct addrinfoEx {
+	  int               ai_flags;
+	  int               ai_family;
+	  int               ai_socktype;
+	  int               ai_protocol;
+	  size_t            ai_addrlen;
+	  char				*ai_canonname;
+	  struct sockaddr	*ai_addr;
+	  void              *ai_blob;
+	  size_t            ai_bloblen;
+	  LPGUID            ai_provider;
+	  struct addrinfoex *ai_next;
+	} ADDRINFOEXA, *PADDRINFOEXA;
+
+//missing Annotating Function Parameters and Return Values
+#ifndef _Outptr_
+#define _Outptr_ _Out_
+#endif
+
+#ifndef _In_reads_bytes_
+#define _In_reads_bytes_(size) 
+#endif
+
+#ifndef _Out_writes_opt_
+#define _Out_writes_opt_(size)
+#endif
+
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef UNICODE
 typedef ADDRINFOW       ADDRINFOT, *PADDRINFOT;
@@ -216,7 +255,7 @@ INT
 #endif
 #endif
 
-#if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600  /*&& _MSC_VER >= 1800*/)
 
 typedef
 void
@@ -332,7 +371,7 @@ INT
 
 #endif
 
-#if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600  /*&& _MSC_VER >= 1800*/)
 
 WINSOCK_API_LINKAGE
 INT
@@ -468,7 +507,7 @@ VOID
 #endif
 #endif
 
-#if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600 /*&& _MSC_VER >= 1800*/)
 
 WINSOCK_API_LINKAGE
 void
@@ -519,7 +558,7 @@ WINSOCK_API_LINKAGE
 INT
 WSAAPI
 getnameinfo(
-    _In_reads_bytes_(SockaddrLength)         const SOCKADDR *    pSockaddr,
+    _In_reads_bytes_(SockaddrLength)    const SOCKADDR *    pSockaddr,
     _In_                                socklen_t           SockaddrLength,
     _Out_writes_opt_(NodeBufferSize)    PCHAR               pNodeBuffer,
     _In_                                DWORD               NodeBufferSize,
@@ -541,7 +580,6 @@ GetNameInfoW(
     _In_                                DWORD               ServiceBufferSize,
     _In_                                INT                 Flags
     );
-
 #define GetNameInfoA    getnameinfo
 
 #ifdef UNICODE

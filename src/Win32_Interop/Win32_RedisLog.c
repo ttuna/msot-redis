@@ -20,17 +20,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Win32_types.h"
-#include "Win32_RedisLog.h"
+#include "win32_types.h"
+#include "win32_redislog.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <malloc.h>
 #include <string.h>
 #include <process.h>
 #include <time.h>
-#include "Win32Fixes.h"
-#include "Win32_EventLog.h"
-#include "Win32_Time.h"
+#include "win32fixes.h"
+#include "win32_eventlog.h"
+#include "win32_time.h"
 #include <assert.h>
 
 static const char ellipsis[] = "[...]";

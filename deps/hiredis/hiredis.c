@@ -39,13 +39,15 @@
 #include <errno.h>
 #include <ctype.h>
 
-#include "hiredis.h"
 #include "net.h"
 #include "sds.h"
 
 #ifdef _WIN32
 #include "win32_hiredis.h"
+#else
+#include "hiredis.h"
 #endif
+
 
 static redisReply *createReplyObject(int type);
 static void *createStringObject(const redisReadTask *task, char *str, size_t len);

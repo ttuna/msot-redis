@@ -29,7 +29,9 @@ RFDMap& RFDMap::getInstance() {
     return instance;
 }
 
-RFDMap::RFDMap() {
+RFDMap::RFDMap() :
+	next_available_rfd(LAST_RESERVED_RFD_INDEX + 1)
+{
     InitializeCriticalSection(&mutex);
     // stdin, assigned rfd = 0
     addCrtFD(0);

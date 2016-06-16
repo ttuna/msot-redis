@@ -22,7 +22,11 @@
 
 #pragma once
 
+#if _MSC_VER >= 1800
 #include <cstdint>
+#else
+#include "../../extern/include/stdint.h"
+#endif
 #include <stdio.h>
 
 int crt_pipe(int *pfds, unsigned int psize, int textmode);

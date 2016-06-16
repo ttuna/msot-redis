@@ -35,6 +35,9 @@
 #include <assert.h>
 #include "sds.h"
 #include "zmalloc.h"
+#ifdef _WIN32
+#include "win32_hiredis.h"
+#endif
 
 /* Create a new sds string with the content specified by the 'init' pointer
  * and 'initlen'.

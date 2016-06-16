@@ -34,11 +34,16 @@
 #define SDS_MAX_PREALLOC (1024*1024)
 
 #ifdef _WIN32
-#include "../../src/Win32_Interop/Win32_Portability.h"
+#include "../../src/Win32_Interop/win32_portability.h"
 #include "../../src/Win32_Interop/win32_types_hiredis.h"
 #endif
 #include <sys/types.h>
 #include <stdarg.h>
+
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
 
 typedef char *sds;
 
@@ -101,5 +106,9 @@ sds sdsMakeRoomFor(sds s, size_t addlen);
 void sdsIncrLen(sds s, int incr);
 sds sdsRemoveFreeSpace(sds s);
 size_t sdsAllocSize(sds s);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

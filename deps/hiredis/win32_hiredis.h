@@ -23,9 +23,6 @@
 #ifndef WIN32_HIREDIS_H
 #define WIN32_HIREDIS_H
 
-//#define WINVER 0x0601
-//#define _WIN32_WINNT 0x0601
-
 #include "../../src/Win32_Interop/Win32_Portability.h"
 #include "../../src/Win32_Interop/Win32_types_hiredis.h"
 #include "../../src/Win32_Interop/Win32_Error.h"
@@ -35,7 +32,14 @@
 
 #include "hiredis.h"
 
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+
+#ifndef snprintf
 #define snprintf    _snprintf
+#endif
 #ifndef va_copy
 #define va_copy(d,s) d = (s)
 #endif
@@ -45,5 +49,9 @@ int redisBufferReadDone(redisContext *c, char *buf, ssize_t nread);
 int redisBufferWriteDone(redisContext *c, int nwritten, int *done);
 
 int redisContextPreConnectTcp(redisContext *c, const char *addr, int port, struct timeval *timeout, SOCKADDR_STORAGE *ss);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

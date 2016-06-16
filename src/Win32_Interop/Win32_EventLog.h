@@ -28,6 +28,7 @@ using namespace std;
 
 typedef class RedisEventLog {
 public:
+	RedisEventLog();
     ~RedisEventLog() {}
 
     void InstallEventLogSource(string appPath);
@@ -43,14 +44,14 @@ public:
     bool IsEventLogEnabled();
 
 private:
-    const string eventLogName = "redis";
-    const string cEventLogPath = "SYSTEM\\CurrentControlSet\\Services\\EventLog\\";
-    const string cEventLogApplicitonPath = cEventLogPath + "Application\\";
-    const string cRedis = "redis";
-    const string cEventMessageFile = "EventMessageFile";
-    const string cRedisServer = "redis-server";
-    const string cTypesSupported = "TypesSupported";
-    const string cApplication = "Application";
+    const string eventLogName /*= "redis"*/;
+    const string cEventLogPath /*= "SYSTEM\\CurrentControlSet\\Services\\EventLog\\"*/;
+    const string cEventLogApplicitonPath /*= cEventLogPath + "Application\\"*/;
+    const string cRedis /*= "redis"*/;
+    const string cEventMessageFile /*= "EventMessageFile"*/;
+    const string cRedisServer /*= "redis-server"*/;
+    const string cTypesSupported /*= "TypesSupported"*/;
+    const string cApplication /*= "Application"*/;
 } RedisEventLog;
 
 extern "C" {

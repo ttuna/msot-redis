@@ -20,8 +20,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Win32_APIs.h"
 #include <errno.h>
+#include "win32_apis.h"
 
 /* Replace MS C rtl rand which is 15bit with 32 bit */
 int replace_random() {

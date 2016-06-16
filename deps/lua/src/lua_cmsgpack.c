@@ -1,6 +1,10 @@
 #include <math.h>
 #include <stdlib.h>
+#if !defined _MSC_VER || _MSC_VER >= 1800
 #include <stdint.h>
+#else
+#include "../../../extern/include/stdint.h"
+#endif
 #include <string.h>
 #include <assert.h>
 

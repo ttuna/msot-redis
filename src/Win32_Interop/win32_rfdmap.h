@@ -73,7 +73,7 @@ private:
     CRITICAL_SECTION mutex;
     const static int FIRST_RESERVED_RFD_INDEX = 0;
     const static int LAST_RESERVED_RFD_INDEX = 2;
-    int next_available_rfd = LAST_RESERVED_RFD_INDEX + 1;
+    int next_available_rfd /*= LAST_RESERVED_RFD_INDEX + 1*/;
 
 private:
     /* Gets the next available Redis File Descriptor. Redis File Descriptors

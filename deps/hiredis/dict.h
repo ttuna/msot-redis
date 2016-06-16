@@ -36,6 +36,10 @@
 #ifndef __DICT_H
 #define __DICT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DICT_OK 0
 #define DICT_ERR 1
 
@@ -122,5 +126,9 @@ static dictEntry * dictFind(dict *ht, const void *key);
 static dictIterator *dictGetIterator(dict *ht);
 static dictEntry *dictNext(dictIterator *iter);
 static void dictReleaseIterator(dictIterator *iter);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __DICT_H */

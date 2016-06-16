@@ -27,9 +27,7 @@
 
 #if (_MSC_VER > 1800)
 #include <corecrt.h>
-#endif
-#if _MSC_VER >= 1700
-#include <stdint.h>
+#include <cstdint.h>
 #else
 #include "../../extern/include/stdint.h"
 #endif

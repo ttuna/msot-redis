@@ -26,14 +26,27 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 using namespace std;
 
-#include "Win32_EventLog.h"
-#include "Win32_SmartHandle.h"
+#include "win32_eventlog.h"
+#include "win32_smarthandle.h"
 #include "EventLog.h"
 
 static bool eventLogEnabled = true;
 static string eventLogIdentity = "redis";
+
+RedisEventLog::RedisEventLog() : 
+	eventLogName("redis"),
+    cEventLogPath("SYSTEM\\CurrentControlSet\\Services\\EventLog\\"),
+    cEventLogApplicitonPath(cEventLogPath + "Application\\"),
+    cRedis("redis"),
+    cEventMessageFile("EventMessageFile"),
+    cRedisServer("redis-server"),
+    cTypesSupported("TypesSupported"),
+    cApplication("Application")
+{
+}
 
 void RedisEventLog::SetEventLogIdentity(const char* identity) {
     eventLogIdentity = string(identity);
@@ -45,7 +58,11 @@ void RedisEventLog::UninstallEventLogSource() {
         SmartRegistryHandle eventLogNameKey;
         if (ERROR_SUCCESS == RegOpenKeyA(appKey, eventLogName.c_str(), eventLogNameKey)) {
             if (ERROR_SUCCESS != RegDeleteKeyA(appKey, eventLogName.c_str())) {
+#if _MSC_VER >= 1800
                 throw std::system_error(GetLastError(), system_category(), "RegDeleteKeyA failed");
+#else
+				throw std::runtime_error("RegDeleteKeyA failed");
+#endif
             }
         }
     }
@@ -57,10 +74,18 @@ void RedisEventLog::UninstallEventLogSource() {
             SmartRegistryHandle eventServiceSubKey;
             if (ERROR_SUCCESS == RegOpenKeyA(eventServiceKey, cRedisServer.c_str(), eventServiceSubKey)) {
                 if (ERROR_SUCCESS != RegDeleteKeyA(eventServiceKey, cRedisServer.c_str())) {
-                    throw std::system_error(GetLastError(), system_category(), "RegDeleteKeyA failed");
+#if _MSC_VER >= 1800
+					throw std::system_error(GetLastError(), system_category(), "RegDeleteKeyA failed");
+#else
+					throw std::runtime_error("RegDeleteKeyA failed");
+#endif
                 }
                 if (ERROR_SUCCESS != RegDeleteKeyA(eventLogKey, cRedis.c_str())) {
-                    throw std::system_error(GetLastError(), system_category(), "RegDeleteKeyA failed");
+#if _MSC_VER >= 1800
+					throw std::system_error(GetLastError(), system_category(), "RegDeleteKeyA failed");
+#else
+					throw std::runtime_error("RegDeleteKeyA failed");
+#endif
                 }
             }
         }
@@ -71,18 +96,30 @@ void RedisEventLog::UninstallEventLogSource() {
 void RedisEventLog::InstallEventLogSource(string appPath) {
     SmartRegistryHandle eventLogKey;
     if (ERROR_SUCCESS != RegOpenKeyA(HKEY_LOCAL_MACHINE, cEventLogPath.c_str(), eventLogKey)) {
+#if _MSC_VER >= 1800
         throw std::system_error(GetLastError(), system_category(), "RegOpenKey failed");
+#else
+		throw std::runtime_error("RegOpenKey failed");
+#endif
     }
     SmartRegistryHandle redis1;
     if (ERROR_SUCCESS != RegOpenKeyA(eventLogKey, cRedis.c_str(), redis1)) {
         if (ERROR_SUCCESS != RegCreateKeyA(eventLogKey, cRedis.c_str(), redis1)) {
-            throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
+#if _MSC_VER >= 1800
+	        throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
+#else
+			throw std::runtime_error("RegCreateKeyA failed");
+#endif
         }
     }
     SmartRegistryHandle redisserver;
     if (ERROR_SUCCESS != RegOpenKeyA(redis1, cRedisServer.c_str(), redisserver)) {
         if (ERROR_SUCCESS != RegCreateKeyA(redis1, cRedisServer.c_str(), redisserver)) {
-            throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
+#if _MSC_VER >= 1800
+	        throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
+#else
+			throw std::runtime_error("RegCreateKeyA failed");
+#endif
         }
     }
     DWORD value = 0;
@@ -90,37 +127,61 @@ void RedisEventLog::InstallEventLogSource(string appPath) {
     DWORD size = sizeof(DWORD);
     if (ERROR_SUCCESS != RegQueryValueExA(redisserver, cTypesSupported.c_str(), 0, &type, NULL, &size)) {
         if (ERROR_SUCCESS != RegSetValueExA(redisserver, cTypesSupported.c_str(), 0, REG_DWORD, (const BYTE*) &value, sizeof(DWORD))) {
-            throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#if _MSC_VER >= 1800
+	        throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#else
+			throw std::runtime_error("RegSetValueExA failed");
+#endif
         }
     }
     type = REG_SZ;
     size = 0;
     if (ERROR_SUCCESS != RegQueryValueExA(redisserver, cEventMessageFile.c_str(), 0, &type, NULL, &size)) {
         if (ERROR_SUCCESS != RegSetValueExA(redisserver, cEventMessageFile.c_str(), 0, REG_SZ, (BYTE*) appPath.c_str(), (DWORD) appPath.length())) {
-            throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#if _MSC_VER >= 1800
+	        throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#else
+			throw std::runtime_error("RegSetValueExA failed");
+#endif
         }
     }
 
     SmartRegistryHandle application;
     if (ERROR_SUCCESS != RegOpenKeyA(eventLogKey, cApplication.c_str(), application)) {
-        throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
-    }
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
+#else
+		throw std::runtime_error("RegCreateKeyA failed");
+#endif
+	}
     SmartRegistryHandle redis2;
     if (ERROR_SUCCESS != RegOpenKeyA(application, cRedis.c_str(), redis2)) {
         if (ERROR_SUCCESS != RegCreateKeyA(application, cRedis.c_str(), redis2)) {
-            throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
+#if _MSC_VER >= 1800
+	        throw std::system_error(GetLastError(), system_category(), "RegCreateKeyA failed");
+#else
+			throw std::runtime_error("RegCreateKeyA failed");
+#endif
         }
     }
     type = REG_DWORD;
     size = 0;
     if (ERROR_SUCCESS != RegQueryValueExA(redis2, cTypesSupported.c_str(), 0, &type, NULL, &size)) {
         if (ERROR_SUCCESS != RegSetValueExA(redis2, cTypesSupported.c_str(), 0, REG_DWORD, (const BYTE*) &value, sizeof(DWORD))) {
-            throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#if _MSC_VER >= 1800
+	        throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#else
+			throw std::runtime_error("RegSetValueExA failed");
+#endif
         }
     }
     if (ERROR_SUCCESS != RegQueryValueExA(redis2, cEventMessageFile.c_str(), 0, &type, NULL, &size)) {
         if (ERROR_SUCCESS != RegSetValueExA(redis2, cEventMessageFile.c_str(), 0, REG_SZ, (BYTE*) appPath.c_str(), (DWORD) appPath.length())) {
-            throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#if _MSC_VER >= 1800
+	        throw std::system_error(GetLastError(), system_category(), "RegSetValueExA failed");
+#else
+			throw std::runtime_error("RegSetValueExA failed");
+#endif
         }
     }
 }

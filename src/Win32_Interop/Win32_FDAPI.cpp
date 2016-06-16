@@ -22,18 +22,19 @@
 #include "win32_types.h"
 
 #define FDAPI_NOCRTREDEFS
-#include "Win32_FDAPI.h"
+#include "win32_fdapi.h"
 #include "win32_rfdmap.h"
+#include <stdexcept>
 #include <exception>
 #include <mswsock.h>
 #include <sys/stat.h>
-#include "Win32_fdapi_crt.h"
-#include "Win32_variadicFunctor.h"
-#include "Win32_ANSI.h"
-#include "Win32_RedisLog.h"
-#include "Win32_Common.h"
-#include "Win32_Error.h"
-#include "Win32_Assert.h"
+#include "win32_fdapi_crt.h"
+#include "win32_variadicfunctor.h"
+#include "win32_ansi.h"
+#include "win32_redislog.h"
+#include "win32_common.h"
+#include "win32_error.h"
+#include "win32_assert.h"
 
 using namespace std;
 
@@ -73,6 +74,7 @@ fdapi_socket socket = NULL;
 fdapi_write write = NULL;
 }
 
+#if _MSC_VER >= 1800
 auto f_WSACleanup = dllfunctor_stdcall<int>("ws2_32.dll", "WSACleanup");
 auto f_WSAFDIsSet = dllfunctor_stdcall<int, SOCKET, fd_set*>("ws2_32.dll", "__WSAFDIsSet");
 auto f_WSAGetLastError = dllfunctor_stdcall<int>("ws2_32.dll", "WSAGetLastError");
@@ -105,6 +107,40 @@ auto f_select = dllfunctor_stdcall<int, int, fd_set*, fd_set*, fd_set*, const st
 auto f_send = dllfunctor_stdcall<int, SOCKET, const char*, int, int>("ws2_32.dll", "send");
 auto f_setsockopt = dllfunctor_stdcall<int, SOCKET, int, int, const char*, int>("ws2_32.dll", "setsockopt");
 auto f_socket = dllfunctor_stdcall<SOCKET, int, int, int>("ws2_32.dll", "socket");
+#else
+dllfunctor_stdcall_0<int> f_WSACleanup = dllfunctor_stdcall_0<int>("ws2_32.dll", "WSACleanup");
+dllfunctor_stdcall_2<int, SOCKET, fd_set*> f_WSAFDIsSet = dllfunctor_stdcall_2<int, SOCKET, fd_set*>("ws2_32.dll", "__WSAFDIsSet");
+dllfunctor_stdcall_0<int> f_WSAGetLastError = dllfunctor_stdcall_0<int>("ws2_32.dll", "WSAGetLastError");
+dllfunctor_stdcall_5<BOOL, SOCKET, LPWSAOVERLAPPED, LPDWORD, BOOL, LPDWORD> f_WSAGetOverlappedResult = dllfunctor_stdcall_5<BOOL, SOCKET, LPWSAOVERLAPPED, LPDWORD, BOOL, LPDWORD>("ws2_32.dll", "WSAGetOverlappedResult");
+dllfunctor_stdcall_3<int, SOCKET, DWORD, LPWSAPROTOCOL_INFO> f_WSADuplicateSocket = dllfunctor_stdcall_3<int, SOCKET, DWORD, LPWSAPROTOCOL_INFO>("ws2_32.dll", "WSADuplicateSocketW");
+dllfunctor_stdcall_9<int, SOCKET, DWORD, LPVOID, DWORD, LPVOID, DWORD, LPVOID, LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE> f_WSAIoctl = dllfunctor_stdcall_9<int, SOCKET, DWORD, LPVOID, DWORD, LPVOID, DWORD, LPVOID, LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE>("ws2_32.dll", "WSAIoctl");
+dllfunctor_stdcall_7<int, SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD, LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE> f_WSARecv = dllfunctor_stdcall_7<int, SOCKET, LPWSABUF, DWORD, LPDWORD, LPDWORD, LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE>("ws2_32.dll", "WSARecv");
+dllfunctor_stdcall_6<SOCKET, int, int, int, LPWSAPROTOCOL_INFO, GROUP, DWORD> f_WSASocket = dllfunctor_stdcall_6<SOCKET, int, int, int, LPWSAPROTOCOL_INFO, GROUP, DWORD>("ws2_32.dll", "WSASocketW");
+dllfunctor_stdcall_7<int, SOCKET, LPWSABUF, DWORD, LPDWORD, DWORD, LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE> f_WSASend = dllfunctor_stdcall_7<int, SOCKET, LPWSABUF, DWORD, LPDWORD, DWORD, LPWSAOVERLAPPED, LPWSAOVERLAPPED_COMPLETION_ROUTINE>("ws2_32.dll", "WSASend");
+dllfunctor_stdcall_2<int, WORD, LPWSADATA> f_WSAStartup = dllfunctor_stdcall_2<int, WORD, LPWSADATA>("ws2_32.dll", "WSAStartup");
+dllfunctor_stdcall_3<int, SOCKET, long, u_long*> f_ioctlsocket = dllfunctor_stdcall_3<int, SOCKET, long, u_long*>("ws2_32.dll", "ioctlsocket");
+
+dllfunctor_stdcall_3<SOCKET, SOCKET, struct sockaddr*, int*> f_accept = dllfunctor_stdcall_3<SOCKET, SOCKET, struct sockaddr*, int*>("ws2_32.dll", "accept");
+dllfunctor_stdcall_3<int, SOCKET, const struct sockaddr*, int> f_bind = dllfunctor_stdcall_3<int, SOCKET, const struct sockaddr*, int>("ws2_32.dll", "bind");
+dllfunctor_stdcall_1<int, SOCKET> f_closesocket = dllfunctor_stdcall_1<int, SOCKET>("ws2_32.dll", "closesocket");
+dllfunctor_stdcall_3<int, SOCKET, const struct sockaddr*, int> f_connect = dllfunctor_stdcall_3<int, SOCKET, const struct sockaddr*, int>("ws2_32.dll", "connect");
+dllfunctor_stdcall_1<void, addrinfo*> f_freeaddrinfo = dllfunctor_stdcall_1<void, addrinfo*>("ws2_32.dll", "freeaddrinfo");
+dllfunctor_stdcall_4<int, PCSTR, PCSTR, const ADDRINFOA*, ADDRINFOA**> f_getaddrinfo = dllfunctor_stdcall_4<int, PCSTR, PCSTR, const ADDRINFOA*, ADDRINFOA**>("ws2_32.dll", "getaddrinfo");
+dllfunctor_stdcall_1<struct hostent*, const char*> f_gethostbyname = dllfunctor_stdcall_1<struct hostent*, const char*>("ws2_32.dll", "gethostbyname");
+dllfunctor_stdcall_3<int, SOCKET, struct sockaddr*, int*> f_getpeername = dllfunctor_stdcall_3<int, SOCKET, struct sockaddr*, int*>("ws2_32.dll", "getpeername");
+dllfunctor_stdcall_3<int, SOCKET, struct sockaddr*, int*> f_getsockname = dllfunctor_stdcall_3<int, SOCKET, struct sockaddr*, int*>("ws2_32.dll", "getsockname");
+dllfunctor_stdcall_5<int, SOCKET, int, int, char*, int*> f_getsockopt = dllfunctor_stdcall_5<int, SOCKET, int, int, char*, int*>("ws2_32.dll", "getsockopt");
+dllfunctor_stdcall_1<u_long, u_long> f_htonl = dllfunctor_stdcall_1<u_long, u_long>("ws2_32.dll", "htonl");
+dllfunctor_stdcall_1<u_short, u_short> f_htons = dllfunctor_stdcall_1<u_short, u_short>("ws2_32.dll", "htons");
+dllfunctor_stdcall_2<int, SOCKET, int> f_listen = dllfunctor_stdcall_2<int, SOCKET, int>("ws2_32.dll", "listen");
+dllfunctor_stdcall_1<u_short, u_short> f_ntohs = dllfunctor_stdcall_1<u_short, u_short>("ws2_32.dll", "ntohs");
+dllfunctor_stdcall_1<u_long, u_long> f_ntohl = dllfunctor_stdcall_1<u_long, u_long>("ws2_32.dll", "ntohl");
+dllfunctor_stdcall_4<int, SOCKET, char*, int, int> f_recv = dllfunctor_stdcall_4<int, SOCKET, char*, int, int>("ws2_32.dll", "recv");
+dllfunctor_stdcall_5<int, int, fd_set*, fd_set*, fd_set*, const struct timeval*> f_select = dllfunctor_stdcall_5<int, int, fd_set*, fd_set*, fd_set*, const struct timeval*>("ws2_32.dll", "select");
+dllfunctor_stdcall_4<int, SOCKET, const char*, int, int> f_send = dllfunctor_stdcall_4<int, SOCKET, const char*, int, int>("ws2_32.dll", "send");
+dllfunctor_stdcall_5<int, SOCKET, int, int, const char*, int> f_setsockopt = dllfunctor_stdcall_5<int, SOCKET, int, int, const char*, int>("ws2_32.dll", "setsockopt");
+dllfunctor_stdcall_3<SOCKET, int, int, int> f_socket = dllfunctor_stdcall_3<SOCKET, int, int, int>("ws2_32.dll", "socket");
+#endif
 
 #ifndef SIO_LOOPBACK_FAST_PATH
 const DWORD SIO_LOOPBACK_FAST_PATH = 0x98000010;	// from Win8 SDK
@@ -117,7 +153,11 @@ void EnableFastLoopback(SOCKET socket) {
         DWORD result_byte_count = -1;
         int result = f_WSAIoctl(socket, SIO_LOOPBACK_FAST_PATH, &enabled, sizeof(enabled), NULL, 0, &result_byte_count, NULL, NULL);
         if (result != 0) {
+#if _MSC_VER >= 1800
             throw std::system_error(f_WSAGetLastError(), system_category(), "WSAIoctl failed");
+#else
+			throw std::runtime_error("WSAIoctl failed");
+#endif
         }
     }
 }
@@ -638,7 +678,11 @@ int FDAPI_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
         }
 
         if (WindowsVersion::getInstance().IsAtLeast_6_0()) {
-            static auto f_WSAPoll = dllfunctor_stdcall<int, WSAPOLLFD*, ULONG, INT>("ws2_32.dll", "WSAPoll");
+#if _MSC_VER >= 1800
+			static auto f_WSAPoll = dllfunctor_stdcall<int, WSAPOLLFD*, ULONG, INT>("ws2_32.dll", "WSAPoll");
+#else
+            static dllfunctor_stdcall_3<int, WSAPOLLFD*, ULONG, INT> f_WSAPoll = dllfunctor_stdcall_3<int, WSAPOLLFD*, ULONG, INT>("ws2_32.dll", "WSAPoll");
+#endif
 
             // WSAPoll implementation has a bug that cause the client
             // to wait forever on a non-existant endpoint
@@ -1091,10 +1135,18 @@ int FDAPI_getaddrinfo(const char *node, const char *service, const struct addrin
 
 const char* FDAPI_inet_ntop(int af, const void *src, char *dst, size_t size) {
     if (WindowsVersion::getInstance().IsAtLeast_6_0()) {
+#if _MSC_VER >= 1800
         static auto f_inet_ntop = dllfunctor_stdcall<const char*, int, const void*, char*, size_t>("ws2_32.dll", "inet_ntop");
+#else
+		static dllfunctor_stdcall_4<const char*, int, const void*, char*, size_t> f_inet_ntop = dllfunctor_stdcall_4<const char*, int, const void*, char*, size_t>("ws2_32.dll", "inet_ntop");
+#endif
         return f_inet_ntop(af, src, dst, size);
     } else {
+#if _MSC_VER >= 1800
         static auto f_WSAAddressToStringA = dllfunctor_stdcall<int, LPSOCKADDR, DWORD, LPWSAPROTOCOL_INFO, LPSTR, LPDWORD>("ws2_32.dll", "WSAAddressToStringA");
+#else
+		static dllfunctor_stdcall_5<int, LPSOCKADDR, DWORD, LPWSAPROTOCOL_INFO, LPSTR, LPDWORD> f_WSAAddressToStringA = dllfunctor_stdcall_5<int, LPSOCKADDR, DWORD, LPWSAPROTOCOL_INFO, LPSTR, LPDWORD>("ws2_32.dll", "WSAAddressToStringA");
+#endif
         struct sockaddr_in srcaddr;
 
         memset(&srcaddr, 0, sizeof(struct sockaddr_in));
@@ -1110,10 +1162,18 @@ const char* FDAPI_inet_ntop(int af, const void *src, char *dst, size_t size) {
 
 int FDAPI_inet_pton(int family, const char* src, void* dst) {
     if (WindowsVersion::getInstance().IsAtLeast_6_0()) {
+#if _MSC_VER >= 1800
         static auto f_inet_pton = dllfunctor_stdcall<int, int, const char*, const void*>("ws2_32.dll", "inet_pton");
+#else
+		static dllfunctor_stdcall_3<int, int, const char*, const void*> f_inet_pton = dllfunctor_stdcall_3<int, int, const char*, const void*>("ws2_32.dll", "inet_pton");
+#endif
         return f_inet_pton(family, src, dst);
     } else {
+#if _MSC_VER >= 1800
         static auto f_WSAStringToAddressA = dllfunctor_stdcall<int, LPSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT>("ws2_32.dll", "WSAStringToAddressA");
+#else
+		static dllfunctor_stdcall_5<int, LPSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT> f_WSAStringToAddressA = dllfunctor_stdcall_5<int, LPSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT>("ws2_32.dll", "WSAStringToAddressA");
+#endif
         struct sockaddr ss;
         int size = sizeof(ss);
         ZeroMemory(&ss, sizeof(ss));
@@ -1135,6 +1195,14 @@ int FDAPI_inet_pton(int family, const char* src, void* dst) {
         return 0;
     }
 }
+
+#ifndef AI_NUMERICSERV
+#define AI_NUMERICSERV 0x0400
+#endif
+
+#ifndef AI_PASSIVE
+#define AI_PASSIVE 0x0001
+#endif
 
 BOOL ParseStorageAddress(const char *ip, int port, SOCKADDR_STORAGE* pStorageAddr) {
     struct addrinfo hints, *res;
