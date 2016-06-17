@@ -59,7 +59,6 @@
 #include "sds.h"
 #ifdef _WIN32
 #include "win32_hiredis.h"
-#include "../../src/Win32_Interop/win32fixes.h"
 #include "mstcpip.h"
 #endif
 

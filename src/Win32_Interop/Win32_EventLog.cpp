@@ -26,7 +26,6 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
 using namespace std;
 
 #include "win32_eventlog.h"

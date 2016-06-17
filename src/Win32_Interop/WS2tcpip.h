@@ -100,7 +100,7 @@
 extern "C" {
 #endif
 
-#if defined _WIN32 && _MSC_VER < 1800
+#if _MSC_VER < 1800
 	typedef struct addrinfoW {
 	  int              ai_flags;
 	  int              ai_family;

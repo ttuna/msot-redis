@@ -24,7 +24,6 @@
 #define FDAPI_NOCRTREDEFS
 #include "win32_fdapi.h"
 #include "win32_rfdmap.h"
-#include <stdexcept>
 #include <exception>
 #include <mswsock.h>
 #include <sys/stat.h>
