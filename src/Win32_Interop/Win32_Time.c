@@ -115,7 +115,7 @@ uint64_t GetHighResRelativeTime(double scale) {
 
 time_t gettimeofdaysecs(unsigned int *usec) {
     FILETIME ft;
-    time_t tmpres = 0;
+    unsigned __int64 tmpres = 0;
 
     GetSystemTimeAsFileTime(&ft);
 
@@ -207,7 +207,11 @@ int gettimeofday_highres(struct timeval *tv, struct timezone *tz) {
  * is not a problem */
 char *ctime_r(const time_t *clock, char *buf)  {
 
+#ifndef _USE_32BIT_TIME_T
     char* t = _ctime64(clock);
+#else
+	char* t = _ctime32(clock);
+#endif
     if (t != NULL) {
         strcpy(buf, t);
     } else {

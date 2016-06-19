@@ -89,7 +89,9 @@ BOOL g_isRunningAsService = FALSE;
 const int cPreshutdownInterval = 180000;
 const char* cServiceInstallPipeName = "\\\\.\\pipe\\redis-service-install";
 
+#ifndef _HIREDIS_CPP_BUILD
 extern "C" int main(int argc, char** argv);
+#endif
 
 typedef class ServicePipeWriter {
 public:
@@ -99,8 +101,10 @@ public:
     }
 
 private:
-    HANDLE pipe = INVALID_HANDLE_VALUE;
-    ServicePipeWriter() {
+    HANDLE pipe;
+    ServicePipeWriter() :
+		pipe(INVALID_HANDLE_VALUE)
+	{
         pipe = CreateFileA(cServiceInstallPipeName, GENERIC_WRITE,
             FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL, NULL);
@@ -178,7 +182,11 @@ BOOL RelaunchAsElevatedProcess(int argc, char** argv) {
         }
         return TRUE;
     } else {
-        throw std::system_error(GetLastError(), system_category(), "ShellExecuteExA failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "ShellExecuteExA failed");
+#else
+		throw std::runtime_error("ShellExecuteExA failed");
+#endif
     }
 }
 
@@ -188,7 +196,11 @@ bool IsProcessElevated() {
 
     // Open the primary access token of the process with TOKEN_QUERY.
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, shToken)) {
-        throw std::system_error(GetLastError(), system_category(), "OpenProcessTokenFailed failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenProcessTokenFailed failed");
+#else
+		throw std::runtime_error("OpenProcessTokenFailed failed");
+#endif
     }
 
     // Retrieve token elevation information.
@@ -196,7 +208,11 @@ bool IsProcessElevated() {
     DWORD dwSize;
     if (!GetTokenInformation(shToken, TokenElevation, &elevation,
         sizeof(elevation), &dwSize)) {
-        throw std::system_error(GetLastError(), system_category(), "OpenProcessTokenFailed failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenProcessTokenFailed failed");
+#else
+		throw std::runtime_error("OpenProcessTokenFailed failed");
+#endif
     }
 
     return  (elevation.TokenIsElevated != 0);
@@ -269,10 +285,14 @@ Cleanup:
 
 VOID SetAccessACLOnFolder(string user, string folder) {
     if (0 != AddAceToObjectsSecurityDescriptor( 
-                (LPSTR)(folder.c_str()), SE_OBJECT_TYPE::SE_FILE_OBJECT,
-                (LPSTR)(user.c_str()), TRUSTEE_FORM::TRUSTEE_IS_NAME,
+                (LPSTR)(folder.c_str()), SE_FILE_OBJECT,
+                (LPSTR)(user.c_str()), TRUSTEE_IS_NAME,
                 GENERIC_ALL, GRANT_ACCESS, SUB_CONTAINERS_AND_OBJECTS_INHERIT)) {
-        throw std::system_error(GetLastError(), system_category(), "ServiceInstall: AddAceToObjectsSecurityDescriptor failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "ServiceInstall: AddAceToObjectsSecurityDescriptor failed");
+#else
+		throw std::runtime_error("ServiceInstall: AddAceToObjectsSecurityDescriptor failed");
+#endif
     }
 }
 
@@ -286,7 +306,11 @@ VOID ServiceInstall(int argc, char ** argv) {
 
     // build arguments to pass to service when it auto starts
     if (GetModuleFileNameA(NULL, szPath, MAX_PATH) == 0) {
-        throw std::system_error(GetLastError(), system_category(), "ServiceInstall: GetModuleFileNameA failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "ServiceInstall: GetModuleFileNameA failed");
+#else
+		throw std::runtime_error("ServiceInstall: GetModuleFileNameA failed");
+#endif
     }
 
     stringstream args;
@@ -311,7 +335,11 @@ VOID ServiceInstall(int argc, char ** argv) {
 
     shSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (shSCManager.Invalid()) {
-        throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#else
+		throw std::runtime_error("OpenSCManager failed");
+#endif
     }
 
     shService = CreateServiceA(
@@ -327,13 +355,21 @@ VOID ServiceInstall(int argc, char ** argv) {
         userName.c_str(),
         NULL);
     if (shService.Invalid()) {
-        throw std::system_error(GetLastError(), system_category(), "CreateService failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "CreateService failed");
+#else
+		throw std::runtime_error("CreateService failed");
+#endif
     }
 
     SERVICE_PRESHUTDOWN_INFO preshutdownInfo;
     preshutdownInfo.dwPreshutdownTimeout = cPreshutdownInterval;
     if (FALSE == ChangeServiceConfig2(shService, SERVICE_CONFIG_PRESHUTDOWN_INFO, &preshutdownInfo)) {
-        throw std::system_error(GetLastError(), system_category(), "ChangeServiceConfig2 failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "ChangeServiceConfig2 failed");
+#else
+		throw std::runtime_error("ChangeServiceConfig2 failed");
+#endif
     }
 
     RedisEventLog().InstallEventLogSource(szPath);
@@ -341,9 +377,11 @@ VOID ServiceInstall(int argc, char ** argv) {
     // make sure NT AUTHORITY\\NetworkService" has rights to every directory where a files may be accessed (CONF,AOF,RDB,DAT)
     stringstream aceMessage;
     aceMessage << "Granting read/write access to 'NT AUTHORITY\\NetworkService' on: ";
-    for (auto folder : GetAccessPaths()) {
-        SetAccessACLOnFolder(userName, folder);
-        aceMessage << "\"" << folder.c_str() << "\" ";
+	vector<string> paths = GetAccessPaths();
+	vector<string>::iterator iter = paths.begin();
+    for (; iter!=paths.end(); ++iter) {
+        SetAccessACLOnFolder(userName, *iter);
+        aceMessage << "\"" << (*iter).c_str() << "\" ";
     }
     ServicePipeWriter::getInstance().Write(aceMessage.str().c_str());
 
@@ -358,14 +396,26 @@ VOID ServiceStart(int argc, char ** argv) {
 
     shSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (shSCManager.Invalid()) {
-        throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#else
+		throw std::runtime_error("OpenSCManager failed");
+#endif
     }
     shService = OpenServiceA(shSCManager, g_serviceName, SERVICE_ALL_ACCESS);
     if (shService.Invalid()) {
-        throw std::system_error(GetLastError(), system_category(), "OpenService failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenService failed");
+#else
+		throw std::runtime_error("OpenService failed");
+#endif
     }
     if (FALSE == StartServiceA(shService, 0, NULL)) {
-        throw std::system_error(GetLastError(), system_category(), "StartService failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "StartService failed");
+#else
+		throw std::runtime_error("StartService failed");
+#endif
     }
 
     // it will take atleast a couple of seconds for the service to start.
@@ -399,15 +449,27 @@ VOID ServiceStop(int argc, char ** argv) {
 
     shSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (shSCManager.Invalid()) {
-        throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#else
+		throw std::runtime_error("OpenSCManager failed");
+#endif
     }
     shService = OpenServiceA(shSCManager, g_serviceName, SERVICE_ALL_ACCESS);
     if (shService.Invalid()) {
-        throw std::system_error(GetLastError(), system_category(), "OpenService failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenService failed");
+#else
+		throw std::runtime_error("OpenService failed");
+#endif
     }
     SERVICE_STATUS status;
     if (FALSE == ControlService(shService, SERVICE_CONTROL_STOP, &status)) {
-        throw std::system_error(GetLastError(), system_category(), "ControlService failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "ControlService failed");
+#else
+		throw std::runtime_error("ControlService failed");
+#endif
     }
 
     DWORD start = GetTickCount();
@@ -432,12 +494,20 @@ VOID ServiceUninstall(int argc, char** argv) {
 
     shSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (shSCManager.Invalid()) {
-        throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "OpenSCManager failed");
+#else
+		throw std::runtime_error("ControlService failed");
+#endif
     }
     shService = OpenServiceA(shSCManager, g_serviceName, SERVICE_ALL_ACCESS);
     if (shService.Valid()) {
         if (FALSE == DeleteService(shService)) {
-            throw std::system_error(GetLastError(), system_category(), "DeleteService failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "DeleteService failed");
+#else
+		throw std::runtime_error("DeleteService failed");
+#endif
         }
     }
 
@@ -450,16 +520,17 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam) {
     try {
         int argc = (int)(serviceRunArguments.size());
         char** argv = new char*[argc];
-        if (argv == nullptr)
+        if (argv == NULL)
             throw std::runtime_error("new() failed");
 
         int argIndex = 0;
-        for each(string arg in serviceRunArguments) {
-            argv[argIndex] = new char[arg.length() + 1];
-            if (argv[argIndex] == nullptr)
+		vector<string>::iterator iter = serviceRunArguments.begin();
+		for (; iter!=serviceRunArguments.end(); ++iter) {
+            argv[argIndex] = new char[(*iter).length() + 1];
+            if (argv[argIndex] == NULL)
                 throw std::runtime_error("new() failed");
-            memcpy_s(argv[argIndex], arg.length() + 1, arg.c_str(), arg.length());
-            argv[argIndex][arg.size()] = '\0';
+            memcpy_s(argv[argIndex], (*iter).length() + 1, (*iter).c_str(), (*iter).length());
+            argv[argIndex][(*iter).size()] = '\0';
             ++argIndex;
         }
 
@@ -468,33 +539,45 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam) {
         // should fix this.
         char szFilePath[MAX_PATH];
         if (GetModuleFileNameA(NULL, szFilePath, MAX_PATH) == 0) {
-            throw std::system_error(GetLastError(), system_category(), "ServiceWrokerThread: GetModuleFileName failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "ServiceWrokerThread: GetModuleFileName failed");
+#else
+		throw std::runtime_error("ServiceWrokerThread: GetModuleFileName failed");
+#endif
         }
         string currentDir = szFilePath;
-        auto pos = currentDir.rfind("\\");
+        size_t pos = currentDir.rfind("\\");
         currentDir.erase(pos);
 
         if (FALSE == SetCurrentDirectoryA(currentDir.c_str())) {
-            throw std::system_error(GetLastError(), system_category(), "SetCurrentDirectory failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "SetCurrentDirectory failed");
+#else
+		throw std::runtime_error("SetCurrentDirectory failed");
+#endif
         }
 
+#ifndef _HIREDIS_CPP_BUILD
         // call redis main without the --service-run argument
         main(argc, argv);
+#endif
 
         for (int a = 0; a < argc; a++) {
             delete[] argv[a];
-            argv[a] = nullptr;
+            argv[a] = NULL;
         }
         delete[] argv;
-        argv = nullptr;
+        argv = NULL;
 
         SetEvent(g_ServiceStoppedEvent);
 
         return ERROR_SUCCESS;
+#if _MSC_VER >= 1800
     } catch (std::system_error syserr) {
         stringstream err;
         err << "ServiceWorkerThread: system error caught. error code=0x" << hex << syserr.code().value() << ", message = " << syserr.what() << endl;
         OutputDebugStringA(err.str().c_str());
+#endif
     } catch (std::runtime_error runerr) {
         stringstream err;
         err << "runtime error caught. message=" << runerr.what() << endl;
@@ -518,7 +601,11 @@ DWORD WINAPI ServiceCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEve
             g_ServiceStatus.dwCheckPoint = 4;
 
             if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE) {
-                throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#if _MSC_VER >= 1800
+				throw std::system_error(GetLastError(), system_category(),  "SetServiceStatus failed");
+#else
+				throw std::runtime_error( "SetServiceStatus failed");
+#endif
             }
 
             break;
@@ -538,7 +625,11 @@ DWORD WINAPI ServiceCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEve
                 g_ServiceStatus.dwCheckPoint = 4;
 
                 if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE) {
-                    throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#if _MSC_VER >= 1800
+				throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#else
+				throw std::runtime_error("SetServiceStatus failed");
+#endif
                 }
             }
 
@@ -548,7 +639,11 @@ DWORD WINAPI ServiceCtrlHandler(DWORD dwControl, DWORD dwEventType, LPVOID lpEve
             g_ServiceStatus.dwCheckPoint = 4;
 
             if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE) {
-                throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#if _MSC_VER >= 1800
+				throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#else
+				throw std::runtime_error("SetServiceStatus failed");
+#endif
             }
             break;
         }
@@ -579,7 +674,11 @@ VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv) {
     g_ServiceStatus.dwCheckPoint = 0;
 
     if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE) {
-        throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#else
+		throw std::runtime_error("SetServiceStatus failed");
+#endif
     }
 
     g_ServiceStoppedEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -591,7 +690,11 @@ VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv) {
         g_ServiceStatus.dwCheckPoint = 1;
 
         if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE) {
-            throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#if _MSC_VER >= 1800
+			throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#else
+			throw std::runtime_error("SetServiceStatus failed");
+#endif
         }
 
         return;
@@ -603,7 +706,11 @@ VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv) {
     g_ServiceStatus.dwCheckPoint = 0;
 
     if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE) {
-        throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#else
+		throw std::runtime_error("SetServiceStatus failed");
+#endif
     }
 
     HANDLE hThread = CreateThread(NULL, 0, ServiceWorkerThread, NULL, 0, NULL);
@@ -618,7 +725,11 @@ VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv) {
     g_ServiceStatus.dwCheckPoint = 3;
 
     if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE) {
-        throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "SetServiceStatus failed");
+#else
+		throw std::runtime_error("SetServiceStatus failed");
+#endif
     }
 }
 
@@ -630,7 +741,11 @@ void ServiceRun() {
     };
 
     if (StartServiceCtrlDispatcherA(ServiceTable) == FALSE) {
-        throw std::system_error(GetLastError(), system_category(), "StartServiceCtrlDispatcherA failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "StartServiceCtrlDispatcherA failed");
+#else
+		throw std::runtime_error("StartServiceCtrlDispatcherA failed");
+#endif
     }
 }
 
@@ -643,7 +758,11 @@ void BuildServiceRunArguments(int argc, char** argv) {
         if (n == 0) {
             CHAR szPath[MAX_PATH];
             if (GetModuleFileNameA(NULL, szPath, MAX_PATH) == 0) {
-                throw std::system_error(GetLastError(), system_category(), "BuildServiceRunArguments: GetModuleFileNameA failed");
+#if _MSC_VER >= 1800
+				throw std::system_error(GetLastError(), system_category(), "BuildServiceRunArguments: GetModuleFileNameA failed");
+#else
+				throw std::runtime_error("BuildServiceRunArguments: GetModuleFileNameA failed");
+#endif
             }
             stringstream ss;
             ss << "\"" << szPath << "\"";
@@ -707,11 +826,13 @@ extern "C" BOOL HandleServiceCommands(int argc, char **argv) {
 
         // not a service command. start redis normally.
         return FALSE;
+#if _MSC_VER >= 1800
     } catch (std::system_error syserr) {
         stringstream ss;
         ss << "HandleServiceCommands: system error caught. error code=" << syserr.code().value() << ", message = " << syserr.what() << endl;
         ServicePipeWriter::getInstance().Write(ss.str());
         exit(1);
+#endif
     } catch (std::runtime_error runerr) {
         stringstream err;
         err << "HandleServiceCommands: runtime error caught. message=" << runerr.what() << endl;

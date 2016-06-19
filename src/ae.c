@@ -146,11 +146,12 @@ void aeStop(aeEventLoop *eventLoop) {
 int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
         aeFileProc *proc, void *clientData)
 {
+	aeFileEvent *fe = 0;
     if (fd >= eventLoop->setsize) {
         errno = ERANGE;
         return AE_ERR;
     }
-    aeFileEvent *fe = &eventLoop->events[fd];
+    fe = &eventLoop->events[fd];
 
     if (aeApiAddEvent(eventLoop, fd, mask) == -1)
         return AE_ERR;
@@ -165,8 +166,9 @@ int aeCreateFileEvent(aeEventLoop *eventLoop, int fd, int mask,
 
 void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask)
 {
+	aeFileEvent *fe = 0;
     if (fd >= eventLoop->setsize) return;
-    aeFileEvent *fe = &eventLoop->events[fd];
+    fe = &eventLoop->events[fd];
     if (fe->mask == AE_NONE) return;
 
     aeApiDelEvent(eventLoop, fd, mask);
@@ -182,8 +184,9 @@ void aeDeleteFileEvent(aeEventLoop *eventLoop, int fd, int mask)
 }
 
 int aeGetFileEvents(aeEventLoop *eventLoop, int fd) {
+	aeFileEvent *fe = 0;
     if (fd >= eventLoop->setsize) return 0;
-    aeFileEvent *fe = &eventLoop->events[fd];
+    fe = &eventLoop->events[fd];
 
     return fe->mask;
 }

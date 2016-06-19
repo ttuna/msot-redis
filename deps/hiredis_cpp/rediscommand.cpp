@@ -1,4 +1,4 @@
-#include "redisreader.h"
+#include "rediscommand.h"
 
 #ifdef _WIN32
 #include "../hiredis/win32_hiredis.h"
@@ -11,47 +11,47 @@ using namespace HIREDIS_CPP;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReader::RedisReader() :
-	m_p_hiredis_reader(0)
+RedisCommand::RedisCommand(const std::string &in_cmd) :
+	m_command_string(in_cmd),
+	m_reply()
 {
-	m_p_hiredis_reader = redisReaderCreate();
+}
+
+RedisCommand::~RedisCommand()
+{
+	cleanup();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool RedisReader::isValid()
+bool RedisCommand::isValid() const
 {
-	if (m_p_hiredis_reader == 0) return false;
-
+	if (m_command_string.empty()) return false;
 	return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void RedisReader::cleanup()
+void RedisCommand::cleanup()
 {
-	if (m_p_hiredis_reader == 0) return;
-
-	redisReaderFree(m_p_hiredis_reader);
-	m_p_hiredis_reader = 0;
+	m_command_string = "";
+	m_reply.cleanup();
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-int RedisReader::feed(const std::string &in_data)
+const RedisReply& RedisCommand::getReply() const
 {
-	// TODO ...
-	return REDIS_OK;
+	return m_reply;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-int RedisReader::getReply(void **reply)
+std::string RedisCommand::getCommandString() const
 {
-	// TODO ...
-	return REDIS_OK;
+	return m_command_string;
 }

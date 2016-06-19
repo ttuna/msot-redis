@@ -1,6 +1,8 @@
 #include "hiredis_cpp.h"
 #include "rediscontext.h"
 #include "redisreader.h"
+#include "rediscommand.h"
+#include "redisreply.h"
 #include <assert.h>
 
 #ifdef _WIN32
@@ -8,60 +10,68 @@
 #else
 #include "../hiredis/hiredis.h"
 #endif
+#include "../hiredis/async.h"
 
 using namespace HIREDIS_CPP;
 
 const int CONNECT_TIMEOUT_SEC = 5;
+const int MAX_HISTORY_ENTRIES = 10;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 HiredisCpp::HiredisCpp() :
-	m_p_redis_ctx(0),
-	m_p_default_reader(0)
+	m_redis_ctx(),
+	m_default_reader(false),
+	m_last_command("")
 {
 }
 
 HiredisCpp::~HiredisCpp()
 {
-	freeCtx();
-
-	if (m_p_default_reader != 0)
-	{
-		delete m_p_default_reader;
-		m_p_default_reader = 0;
-	}
-}
-
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void HiredisCpp::freeCtx()
-{
-	if (m_p_redis_ctx == 0) return;
-	
-	m_p_redis_ctx->cleanup();
-	delete m_p_redis_ctx;
-	m_p_default_reader = 0;
+	// avoid double freeing of m_p_hiredis_reader which was taken from m_p_hiredis_ctx ...
+	m_default_reader.m_p_hiredis_reader = NULL;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool HiredisCpp::connect(const std::string &in_host, const int in_port)
+bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bool in_blocking, const int in_timeout_sec)
 {
 	if (in_host.empty()) return false;
 	if (in_port == 0) return false;
 
 	redisContext* ctx = 0;
-	TIMEVAL tv = {CONNECT_TIMEOUT_SEC, 0};
-	ctx = redisConnectWithTimeout(in_host.data(), in_port, tv);
+	if (in_blocking)
+	{
+		TIMEVAL tv = {(in_timeout_sec == -1) ? CONNECT_TIMEOUT_SEC : in_timeout_sec, 0};
+		ctx = redisConnectWithTimeout(in_host.data(), in_port, tv);
+	}
+	else
+	{
+		ctx = redisConnectNonBlock(in_host.data(), in_port);
+	}
 	if (ctx == 0) return false;
 
-	m_p_redis_ctx = new RedisContext;
-	if (m_p_redis_ctx == 0) return false;
+	m_redis_ctx.cleanup();
+	m_redis_ctx.m_context.hiredis_ctx = ctx;
+	m_redis_ctx.m_is_async = false;
+	return true;
+}
 
-	m_p_redis_ctx->m_p_hiredis_ctx = ctx;
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+bool HiredisCpp::connectAsync(const std::string &in_host, const int in_port)
+{
+	if (in_host.empty()) return false;
+	if (in_port == 0) return false;
+
+	redisAsyncContext* ctx = redisAsyncConnect(in_host.data(), in_port);
+	if (ctx == 0) return false;
+
+	m_redis_ctx.cleanup();
+	m_redis_ctx.m_context.hiredis_async_ctx = ctx;
+	m_redis_ctx.m_is_async = true;
 	return true;
 }
 
@@ -70,11 +80,10 @@ bool HiredisCpp::connect(const std::string &in_host, const int in_port)
 // ----------------------------------------------------------------------------
 int HiredisCpp::setTimeout(const int in_seconds)
 {
-	if (m_p_redis_ctx == 0) return REDIS_ERR;
-	if (m_p_redis_ctx->isValid() == false) return REDIS_ERR;
+	if (m_redis_ctx.isValid() == false) return REDIS_ERR;
 
 	TIMEVAL tv = {in_seconds, 0};
-	return redisSetTimeout(m_p_redis_ctx->m_p_hiredis_ctx, tv);
+	return redisSetTimeout(m_redis_ctx.m_context.hiredis_ctx, tv);
 }
 
 // ----------------------------------------------------------------------------
@@ -82,52 +91,52 @@ int HiredisCpp::setTimeout(const int in_seconds)
 // ----------------------------------------------------------------------------
 int HiredisCpp::enableKeepAlive()
 {
-	if (m_p_redis_ctx == 0) return REDIS_ERR;
-	if (m_p_redis_ctx->isValid() == false) return REDIS_ERR;
-
-	return redisEnableKeepAlive(m_p_redis_ctx->m_p_hiredis_ctx);
+	if (m_redis_ctx.isValid() == false) return REDIS_ERR;
+	return redisEnableKeepAlive(m_redis_ctx.m_context.hiredis_ctx);
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReader& HiredisCpp::getReader(const std::string &in_name)
+RedisReader& HiredisCpp::getReader(const bool in_default)
 {
-	if (in_name.empty()) return getDefaultReader();
-
-	RedisReader* reader = 0;
-	std::map<std::string, RedisReader*>::iterator iter = m_reader_map.end();
-	if ((iter = m_reader_map.find(in_name)) != m_reader_map.end())
+	if (m_default_reader.m_p_hiredis_reader == 0)
 	{
-		reader = iter->second;
-	}
-	else
-	{
-		reader = createReader();
-		m_reader_map[in_name] = reader;
+		if (in_default == true && m_redis_ctx.m_context.hiredis_ctx != 0)
+		{
+			m_default_reader.m_p_hiredis_reader = m_redis_ctx.m_context.hiredis_ctx->reader;
+		}
+		else
+		{
+			m_default_reader.m_p_hiredis_reader = redisReaderCreate();
+		}
 	}
 	
-	assert(reader != 0);
-	return *reader;
+	return m_default_reader;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReader& HiredisCpp::getDefaultReader()
+const RedisReply& HiredisCpp::exec(const std::string &in_command_string)
 {
-	if (m_p_default_reader == 0)
-		m_p_default_reader = createReader();
+	resetLastCommand();
 
-	assert(m_p_default_reader != 0);
-	return *m_p_default_reader;
+	if (in_command_string.empty() == false)
+	{
+		redisReply* reply = static_cast<redisReply*>(redisCommand(m_redis_ctx.m_context.hiredis_ctx, in_command_string.data()));
+		m_last_command.m_command_string = in_command_string;
+		m_last_command.m_reply.m_p_hiredis_reply = reply;
+	}
+
+	return m_last_command.m_reply;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReader* HiredisCpp::createReader()
+void HiredisCpp::resetLastCommand()
 {
-	RedisReader* reader = new RedisReader;
-	return reader;
+	m_last_command.m_command_string = "";
+	m_last_command.m_reply.cleanup();
 }

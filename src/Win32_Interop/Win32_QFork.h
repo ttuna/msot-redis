@@ -23,7 +23,11 @@
 #pragma once
 
 #include <Windows.h>
+#if _MSC_VER >= 1800
 #include <stdint.h>
+#else
+#include "../../extern/include/stdint.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

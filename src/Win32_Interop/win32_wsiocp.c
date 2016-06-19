@@ -27,6 +27,7 @@
 #include "win32_wsiocp.h"
 #include "Win32_FDAPI.h"
 #include "Win32_Assert.h"
+#include "Win32_Error.h"
 #include <errno.h>
 
 static HANDLE iocph;
@@ -423,6 +424,7 @@ int WSIOCP_SocketConnectBind(int fd, const SOCKADDR_STORAGE *socketAddrStorage, 
     const GUID wsaid_connectex = WSAID_CONNECTEX;
     DWORD result;
     iocpSockState *sockstate;
+	int storageSize = 0;
 
     if ((sockstate = WSIOCP_GetSocketState(fd)) == NULL) {
         errno = WSAEINVAL;
@@ -436,12 +438,11 @@ int WSIOCP_SocketConnectBind(int fd, const SOCKADDR_STORAGE *socketAddrStorage, 
     memset(&sockstate->ov_read, 0, sizeof(sockstate->ov_read));
 
     // Need to bind sock before connectex
-    int storageSize = 0;
     switch (socketAddrStorage->ss_family) {
         case AF_INET:
         {
+			SOCKADDR_IN addr;
             storageSize = sizeof(SOCKADDR_IN);
-            SOCKADDR_IN addr;
             memset(&addr, 0, storageSize);
             addr.sin_family = socketAddrStorage->ss_family;
             addr.sin_addr.S_un.S_addr = INADDR_ANY;
@@ -451,8 +452,8 @@ int WSIOCP_SocketConnectBind(int fd, const SOCKADDR_STORAGE *socketAddrStorage, 
         }
         case AF_INET6:
         {
+			SOCKADDR_IN6 addr;
             storageSize = sizeof(SOCKADDR_IN6);
-            SOCKADDR_IN6 addr;
             memset(&addr, 0, storageSize);
             addr.sin6_family = socketAddrStorage->ss_family;
             memset(&(addr.sin6_addr.u.Byte), 0, 16);

@@ -104,13 +104,17 @@
   <ItemGroup>
     <ClInclude Include="..\..\deps\hiredis_cpp\global.h" />
     <ClInclude Include="..\..\deps\hiredis_cpp\hiredis_cpp.h" />
+    <ClInclude Include="..\..\deps\hiredis_cpp\rediscommand.h" />
     <ClInclude Include="..\..\deps\hiredis_cpp\rediscontext.h" />
     <ClInclude Include="..\..\deps\hiredis_cpp\redisreader.h" />
+    <ClInclude Include="..\..\deps\hiredis_cpp\redisreply.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\deps\hiredis_cpp\hiredis_cpp.cpp" />
-    <ClCompile Include="..\..\deps\hiredis_cpp\readisreader.cpp" />
+    <ClCompile Include="..\..\deps\hiredis_cpp\redisreader.cpp" />
+    <ClCompile Include="..\..\deps\hiredis_cpp\rediscommand.cpp" />
     <ClCompile Include="..\..\deps\hiredis_cpp\rediscontext.cpp" />
+    <ClCompile Include="..\..\deps\hiredis_cpp\redisreply.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

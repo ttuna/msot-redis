@@ -68,12 +68,15 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WINVER=0x0601;_WIN32_WINNT=0x0601;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WINVER=0x0601;_WIN32_WINNT=0x0601;_HIREDIS_CPP_BUILD;_USE_32BIT_TIME_T;_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -90,10 +93,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\adlist.h" />
+    <ClInclude Include="..\..\src\ae.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32fixes.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_ansi.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_apis.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_assert.h" />
+    <ClInclude Include="..\..\src\Win32_Interop\Win32_CommandLine.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_common.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_error.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_eventlog.h" />
@@ -102,17 +108,24 @@
     <ClInclude Include="..\..\src\Win32_Interop\win32_portability.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_redislog.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_rfdmap.h" />
+    <ClInclude Include="..\..\src\Win32_Interop\Win32_Service.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_smarthandle.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_types.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_types_hiredis.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_variadicfunctor.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_winapifamily.h" />
+    <ClInclude Include="..\..\src\Win32_Interop\win32_wsiocp.h" />
+    <ClInclude Include="..\..\src\Win32_Interop\win32_wsiocp2.h" />
     <ClInclude Include="..\..\src\Win32_Interop\ws2tcpip.h" />
+    <ClInclude Include="..\..\src\zmalloc.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\adlist.c" />
+    <ClCompile Include="..\..\src\ae.c" />
     <ClCompile Include="..\..\src\Win32_Interop\win32fixes.c" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_ansi.c" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_apis.c" />
+    <ClCompile Include="..\..\src\Win32_Interop\Win32_CommandLine.cpp" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_common.cpp" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_error.c" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_eventlog.cpp" />
@@ -120,8 +133,11 @@
     <ClCompile Include="..\..\src\Win32_Interop\win32_fdapi_crt.cpp" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_redislog.c" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_rfdmap.cpp" />
+    <ClCompile Include="..\..\src\Win32_Interop\Win32_service.cpp" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_time.c" />
     <ClCompile Include="..\..\src\Win32_Interop\win32_variadicfunctor.cpp" />
+    <ClCompile Include="..\..\src\Win32_Interop\win32_wsiocp.c" />
+    <ClCompile Include="..\..\src\zmalloc.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

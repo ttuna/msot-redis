@@ -109,12 +109,13 @@ public:
         }
         vector<string> params;
         int skipCount = 1 + startIndex;
-        for (string token : tokens) {
+		vector<string>::iterator token_iter = tokens.begin();
+        for (; token_iter!=tokens.end(); ++token_iter) {
             if (skipCount > 0) {
                 skipCount--;
                 continue;
             }
-            string param = string(token);
+            string param = string(*token_iter);
             transform(param.begin(), param.end(), param.begin(), ::tolower);
             param = stripQuotes(param);
             params.push_back(param);
@@ -194,11 +195,18 @@ static SaveParams savep = SaveParams();
 
 typedef class BindParams : public ParamExtractor {
 public:
-    BindParams() {}
+    BindParams() :
+		f_WSAStringToAddressA(dllfunctor_stdcall_5<int, LPCSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT>("ws2_32.dll", "WSAStringToAddressA"))
+	{
+		//f_WSAStringToAddressA = dllfunctor_stdcall_5<int, LPCSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT>("ws2_32.dll", "WSAStringToAddressA");
+	}
 
+#if _MSC_VER >= 1800
     dllfunctor_stdcall<int, LPCSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT> f_WSAStringToAddressA =
         dllfunctor_stdcall<int, LPCSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT>("ws2_32.dll", "WSAStringToAddressA");
-
+#else
+	dllfunctor_stdcall_5<int, LPCSTR, INT, LPWSAPROTOCOL_INFO, LPSOCKADDR, LPINT> f_WSAStringToAddressA;
+#endif
     bool IsIPAddress(string address) {
         SOCKADDR_IN sockaddr4;
         sockaddr4.sin_family = AF_INET;
@@ -250,13 +258,14 @@ public:
     virtual vector<string> Extract(vector<string> tokens, int startIndex = 0) {
         vector<string> params;
         int skipCount = 1 + startIndex;
-        for (string token : tokens) {
+		vector<string>::iterator token_iter = tokens.begin();
+        for (; token_iter!=tokens.end(); ++token_iter) {
             if (skipCount > 0) {
                 skipCount--;
                 continue;
             }
-            if (IsIPAddress(token)) {
-                string param = string(token);
+            if (IsIPAddress(*token_iter)) {
+                string param = string(*token_iter);
                 transform(param.begin(), param.end(), param.begin(), ::tolower);
                 param = stripQuotes(param);
                 params.push_back(param);
@@ -277,23 +286,24 @@ private:
 
 public:
     SentinelParams() {
-        subCommands = RedisParamterMapper
-        {
-            { "monitor",                    &fp4 },    // sentinel monitor [master name] [ip] [port] [quorum]
-            { "auth-pass",                  &fp2 },    // sentinel auth-pass [master name] [password]
-            { "down-after-milliseconds",    &fp2 },    // sentinel down-after-milliseconds [master name] [milliseconds]
-            { "parallel-syncs",             &fp2 },    // sentinel parallel-syncs [master name] [number]
-            { "failover-timeout",           &fp2 },    // sentinel failover-timeout [master name] [number]
-            { "notification-script",        &fp2 },    // sentinel notification-script [master name] [scriptPath]
-            { "client-reconfig-script",     &fp2 },    // sentinel client-reconfig-script [master name] [scriptPath]
-            { "config-epoch",               &fp2 },    // sentinel config-epoch [name] [epoch]
-            { "current-epoch",              &fp1 },    // sentinel current-epoch <epoch>
-            { "leader-epoch",               &fp2 },    // sentinel leader-epoch [name] [epoch]
-            { "known-slave",                &fp3 },    // sentinel known-slave <name> <ip> <port>
-            { "known-sentinel",             &fp4 },    // sentinel known-sentinel <name> <ip> <port> [runid]
-            { "announce-ip",                &fp1 },    // sentinel announce-ip <ip>
-            { "announce-port",              &fp1 }     // sentinel announce-port <port>
+		std::pair<string, ParamExtractor*> subCommands_init_array[] = 
+		{
+            std::pair<string, ParamExtractor*>( "monitor",                    &fp4 ),    // sentinel monitor [master name] [ip] [port] [quorum]
+            std::pair<string, ParamExtractor*>( "auth-pass",                  &fp2 ),    // sentinel auth-pass [master name] [password]
+            std::pair<string, ParamExtractor*>( "down-after-milliseconds",    &fp2 ),    // sentinel down-after-milliseconds [master name] [milliseconds]
+            std::pair<string, ParamExtractor*>( "parallel-syncs",             &fp2 ),    // sentinel parallel-syncs [master name] [number]
+            std::pair<string, ParamExtractor*>( "failover-timeout",           &fp2 ),    // sentinel failover-timeout [master name] [number]
+            std::pair<string, ParamExtractor*>( "notification-script",        &fp2 ),    // sentinel notification-script [master name] [scriptPath]
+            std::pair<string, ParamExtractor*>( "client-reconfig-script",     &fp2 ),    // sentinel client-reconfig-script [master name] [scriptPath]
+            std::pair<string, ParamExtractor*>( "config-epoch",               &fp2 ),    // sentinel config-epoch [name] [epoch]
+            std::pair<string, ParamExtractor*>( "current-epoch",              &fp1 ),    // sentinel current-epoch <epoch>
+            std::pair<string, ParamExtractor*>( "leader-epoch",               &fp2 ),    // sentinel leader-epoch [name] [epoch]
+            std::pair<string, ParamExtractor*>( "known-slave",                &fp3 ),    // sentinel known-slave <name> <ip> <port>
+            std::pair<string, ParamExtractor*>( "known-sentinel",             &fp4 ),    // sentinel known-sentinel <name> <ip> <port> [runid]
+            std::pair<string, ParamExtractor*>( "announce-ip",                &fp1 ),    // sentinel announce-ip <ip>
+            std::pair<string, ParamExtractor*>( "announce-port",              &fp1 )     // sentinel announce-port <port>
         };
+        subCommands = RedisParamterMapper(subCommands_init_array, subCommands_init_array + sizeof(subCommands_init_array) / sizeof(std::pair<string, ParamExtractor*>));
     }
 
     vector<string> Extract(int argStartIndex, int argc, char** argv) {
@@ -310,10 +320,11 @@ public:
         vector<string> params;
         params.push_back(argv[argStartIndex + 1]);
         vector<string> subParams = subCommands[argv[argStartIndex + 1]]->Extract(argStartIndex + 1, argc, argv);
-		for (string p : subParams) {
-            transform(p.begin(), p.end(), p.begin(), ::tolower);
-            p = stripQuotes(p);
-            params.push_back(p);
+		vector<string>::iterator p_iter = subParams.begin();
+        for (; p_iter!=subParams.end(); ++p_iter) {
+            transform((*p_iter).begin(), (*p_iter).end(), (*p_iter).begin(), ::tolower);
+            *p_iter = stripQuotes(*p_iter);
+            params.push_back(*p_iter);
         }
         return params;
     }
@@ -334,11 +345,11 @@ public:
         params.push_back(subcommand);
 
         vector<string> subParams = subCommands[subcommand]->Extract(tokens, startIndex + 1);
-
-        for (string p : subParams) {
-            transform(p.begin(), p.end(), p.begin(), ::tolower);
-            p = stripQuotes(p);
-            params.push_back(p);
+		vector<string>::iterator p_iter = subParams.begin();
+        for (; p_iter!=subParams.end(); ++p_iter) {
+            transform((*p_iter).begin(), (*p_iter).end(), (*p_iter).begin(), ::tolower);
+            *p_iter = stripQuotes(*p_iter);
+            params.push_back(*p_iter);
         }
         return params;
     };
@@ -347,99 +358,101 @@ public:
 
 static SentinelParams sp = SentinelParams();
 
-// Map of argument name to argument processing engine.
-static RedisParamterMapper g_redisArgMap =
+std::pair<string, ParamExtractor*> g_redisArgMap_init_array[] = 
 {
     // QFork flags
-    { cQFork,                           &fp2 },    // qfork [QForkControlMemoryMap handle] [parent process id]
-    { cPersistenceAvailable,            &fp1 },    // persistence-available [yes/no]
+    std::pair<string, ParamExtractor*>( cQFork,                           &fp2 ),    // qfork [QForkControlMemoryMap handle] [parent process id]
+    std::pair<string, ParamExtractor*>( cPersistenceAvailable,            &fp1 ),    // persistence-available [yes/no]
 
     // service commands
-    { cServiceName,                     &fp1 },    // service-name [name]
-    { cServiceRun,                      &fp0 },    // service-run
-    { cServiceInstall,                  &fp0 },    // service-install
-    { cServiceUninstall,                &fp0 },    // service-uninstall
-    { cServiceStart,                    &fp0 },    // service-start
-    { cServiceStop,                     &fp0 },    // service-stop
+    std::pair<string, ParamExtractor*>( cServiceName,                     &fp1 ),    // service-name [name]
+    std::pair<string, ParamExtractor*>( cServiceRun,                      &fp0 ),    // service-run
+    std::pair<string, ParamExtractor*>( cServiceInstall,                  &fp0 ),    // service-install
+    std::pair<string, ParamExtractor*>( cServiceUninstall,                &fp0 ),    // service-uninstall
+    std::pair<string, ParamExtractor*>( cServiceStart,                    &fp0 ),    // service-start
+    std::pair<string, ParamExtractor*>( cServiceStop,                     &fp0 ),    // service-stop
 
     // redis commands
-    { "daemonize",                      &fp1 },    // daemonize [yes/no]
-    { "pidfile",                        &fp1 },    // pidfile [file]
-    { "port",                           &fp1 },    // port [port number]
-    { "tcp-backlog",                    &fp1 },    // tcp-backlog [number]
-    { "bind",                           &bp },     // bind [address] [address] ...
-    { "unixsocket",                     &fp1 },    // unixsocket [path] 
-    { "timeout",                        &fp1 },    // timeout [value] 
-    { "tcp-keepalive",                  &fp1 },    // tcp-keepalive [value]
-    { "loglevel",                       &fp1 },    // lovlevel [value]
-    { "logfile",                        &fp1 },    // logfile [file]
-    { "syslog-enabled",                 &fp1 },    // syslog-enabled [yes/no]
-    { "syslog-ident",                   &fp1 },    // syslog-ident [string]
-    { "syslog-facility",                &fp1 },    // syslog-facility [string]
-    { "databases",                      &fp1 },    // databases [number]
-    { "save",                           &savep },  // save [seconds] [changes] or save ""
-    { "stop-writes-on-bgsave-error",    &fp1 },    // stop-writes-on-bgsave-error [yes/no] 
-    { "rdbcompression",                 &fp1 },    // rdbcompression [yes/no]
-    { "rdbchecksum",                    &fp1 },    // rdbchecksum [yes/no]
-    { "dbfilename",                     &fp1 },    // dbfilename [filename]
-    { cDir,                             &fp1 },    // dir [path]
-    { "slaveof",                        &fp2 },    // slaveof [masterip] [master port] 
-    { "masterauth",                     &fp1 },    // masterauth [master-password]
-    { "slave-serve-stale-data",         &fp1 },    // slave-serve-stale-data [yes/no]
-    { "slave-read-only",                &fp1 },    // slave-read-only [yes/no]
-    { "repl-ping-slave-period",         &fp1 },    // repl-ping-slave-period [number]
-    { "repl-timeout",                   &fp1 },    // repl-timeout [number]
-    { "repl-disable-tcp-nodelay",       &fp1 },    // repl-disable-tcp-nodelay [yes/no]
-    { "repl-diskless-sync",             &fp1 },    // repl-diskless-sync [yes/no]
-    { "repl-diskless-sync-delay",       &fp1 },    // repl-diskless-sync-delay [number]
-    { "repl-backlog-size",              &fp1 },    // repl-backlog-size [number]
-    { "repl-backlog-ttl",               &fp1 },    // repl-backlog-ttl [number]
-    { "slave-priority",                 &fp1 },    // slave-priority [number]
-    { "min-slaves-to-write",            &fp1 },    // min-slaves-to-write [number]
-    { "min-slaves-max-lag",             &fp1 },    // min-slaves-max-lag [number]
-    { "requirepass",                    &fp1 },    // requirepass [string]
-    { "rename-command",                 &fp2 },    // rename-command [command] [string]
-    { "maxclients",                     &fp1 },    // maxclients [number]
-    { "maxmemory",                      &fp1 },    // maxmemory [bytes]
-    { "maxmemory-policy",               &fp1 },    // maxmemory-policy [policy]
-    { "maxmemory-samples",              &fp1 },    // maxmemory-samples [number]
-    { "appendonly",                     &fp1 },    // appendonly [yes/no]
-    { "appendfilename",                 &fp1 },    // appendfilename [filename]
-    { "appendfsync",                    &fp1 },    // appendfsync [value]
-    { "no-appendfsync-on-rewrite",      &fp1 },    // no-appendfsync-on-rewrite [value]
-    { "auto-aof-rewrite-percentage",    &fp1 },    // auto-aof-rewrite-percentage [number]
-    { "auto-aof-rewrite-min-size",      &fp1 },    // auto-aof-rewrite-min-size [number]
-    { "lua-time-limit",                 &fp1 },    // lua-time-limit [number]
-    { "slowlog-log-slower-than",        &fp1 },    // slowlog-log-slower-than [number]
-    { "slowlog-max-len",                &fp1 },    // slowlog-max-len [number]
-    { "notify-keyspace-events",         &fp1 },    // notify-keyspace-events [string]
-    { "hash-max-ziplist-entries",       &fp1 },    // hash-max-ziplist-entries [number]
-    { "hash-max-ziplist-value",         &fp1 },    // hash-max-ziplist-value [number]
-    { "list-max-ziplist-entries",       &fp1 },    // list-max-ziplist-entries [number]
-    { "list-max-ziplist-value",         &fp1 },    // list-max-ziplist-value [number]
-    { "set-max-intset-entries",         &fp1 },    // set-max-intset-entries [number]
-    { "zset-max-ziplist-entries",       &fp1 },    // zset-max-ziplist-entries [number]
-    { "zset-max-ziplist-value",         &fp1 },    // zset-max-ziplist-value [number]
-    { "hll-sparse-max-bytes",           &fp1 },    // hll-sparse-max-bytes [number]
-    { "activerehashing",                &fp1 },    // activerehashing [yes/no]
-    { "client-output-buffer-limit",     &fp4 },    // client-output-buffer-limit [class] [hard limit] [soft limit] [soft seconds]
-    { "hz",                             &fp1 },    // hz [number]
-    { "aof-rewrite-incremental-fsync",  &fp1 },    // aof-rewrite-incremental-fsync [yes/no]
-    { "aof-load-truncated",             &fp1 },    // aof-load-truncated [yes/no]
-    { "latency-monitor-threshold",      &fp1 },    // latency-monitor-threshold [number]
-    { cInclude,                         &fp1 },    // include [path]
+    std::pair<string, ParamExtractor*>( "daemonize",                      &fp1 ),    // daemonize [yes/no]
+    std::pair<string, ParamExtractor*>( "pidfile",                        &fp1 ),    // pidfile [file]
+    std::pair<string, ParamExtractor*>( "port",                           &fp1 ),    // port [port number]
+    std::pair<string, ParamExtractor*>( "tcp-backlog",                    &fp1 ),    // tcp-backlog [number]
+    std::pair<string, ParamExtractor*>( "bind",                           &bp ),     // bind [address] [address] ...
+    std::pair<string, ParamExtractor*>( "unixsocket",                     &fp1 ),    // unixsocket [path] 
+    std::pair<string, ParamExtractor*>( "timeout",                        &fp1 ),    // timeout [value] 
+    std::pair<string, ParamExtractor*>( "tcp-keepalive",                  &fp1 ),    // tcp-keepalive [value]
+    std::pair<string, ParamExtractor*>( "loglevel",                       &fp1 ),    // lovlevel [value]
+    std::pair<string, ParamExtractor*>( "logfile",                        &fp1 ),    // logfile [file]
+    std::pair<string, ParamExtractor*>( "syslog-enabled",                 &fp1 ),    // syslog-enabled [yes/no]
+    std::pair<string, ParamExtractor*>( "syslog-ident",                   &fp1 ),    // syslog-ident [string]
+    std::pair<string, ParamExtractor*>( "syslog-facility",                &fp1 ),    // syslog-facility [string]
+    std::pair<string, ParamExtractor*>( "databases",                      &fp1 ),    // databases [number]
+    std::pair<string, ParamExtractor*>( "save",                           &savep ),  // save [seconds] [changes] or save ""
+    std::pair<string, ParamExtractor*>( "stop-writes-on-bgsave-error",    &fp1 ),    // stop-writes-on-bgsave-error [yes/no] 
+    std::pair<string, ParamExtractor*>( "rdbcompression",                 &fp1 ),    // rdbcompression [yes/no]
+    std::pair<string, ParamExtractor*>( "rdbchecksum",                    &fp1 ),    // rdbchecksum [yes/no]
+    std::pair<string, ParamExtractor*>( "dbfilename",                     &fp1 ),    // dbfilename [filename]
+    std::pair<string, ParamExtractor*>( cDir,                             &fp1 ),    // dir [path]
+    std::pair<string, ParamExtractor*>( "slaveof",                        &fp2 ),    // slaveof [masterip] [master port] 
+    std::pair<string, ParamExtractor*>( "masterauth",                     &fp1 ),    // masterauth [master-password]
+    std::pair<string, ParamExtractor*>( "slave-serve-stale-data",         &fp1 ),    // slave-serve-stale-data [yes/no]
+    std::pair<string, ParamExtractor*>( "slave-read-only",                &fp1 ),    // slave-read-only [yes/no]
+    std::pair<string, ParamExtractor*>( "repl-ping-slave-period",         &fp1 ),    // repl-ping-slave-period [number]
+    std::pair<string, ParamExtractor*>( "repl-timeout",                   &fp1 ),    // repl-timeout [number]
+    std::pair<string, ParamExtractor*>( "repl-disable-tcp-nodelay",       &fp1 ),    // repl-disable-tcp-nodelay [yes/no]
+    std::pair<string, ParamExtractor*>( "repl-diskless-sync",             &fp1 ),    // repl-diskless-sync [yes/no]
+    std::pair<string, ParamExtractor*>( "repl-diskless-sync-delay",       &fp1 ),    // repl-diskless-sync-delay [number]
+    std::pair<string, ParamExtractor*>( "repl-backlog-size",              &fp1 ),    // repl-backlog-size [number]
+    std::pair<string, ParamExtractor*>( "repl-backlog-ttl",               &fp1 ),    // repl-backlog-ttl [number]
+    std::pair<string, ParamExtractor*>( "slave-priority",                 &fp1 ),    // slave-priority [number]
+    std::pair<string, ParamExtractor*>( "min-slaves-to-write",            &fp1 ),    // min-slaves-to-write [number]
+    std::pair<string, ParamExtractor*>( "min-slaves-max-lag",             &fp1 ),    // min-slaves-max-lag [number]
+    std::pair<string, ParamExtractor*>( "requirepass",                    &fp1 ),    // requirepass [string]
+    std::pair<string, ParamExtractor*>( "rename-command",                 &fp2 ),    // rename-command [command] [string]
+    std::pair<string, ParamExtractor*>( "maxclients",                     &fp1 ),    // maxclients [number]
+    std::pair<string, ParamExtractor*>( "maxmemory",                      &fp1 ),    // maxmemory [bytes]
+    std::pair<string, ParamExtractor*>( "maxmemory-policy",               &fp1 ),    // maxmemory-policy [policy]
+    std::pair<string, ParamExtractor*>( "maxmemory-samples",              &fp1 ),    // maxmemory-samples [number]
+    std::pair<string, ParamExtractor*>( "appendonly",                     &fp1 ),    // appendonly [yes/no]
+    std::pair<string, ParamExtractor*>( "appendfilename",                 &fp1 ),    // appendfilename [filename]
+    std::pair<string, ParamExtractor*>( "appendfsync",                    &fp1 ),    // appendfsync [value]
+    std::pair<string, ParamExtractor*>( "no-appendfsync-on-rewrite",      &fp1 ),    // no-appendfsync-on-rewrite [value]
+    std::pair<string, ParamExtractor*>( "auto-aof-rewrite-percentage",    &fp1 ),    // auto-aof-rewrite-percentage [number]
+    std::pair<string, ParamExtractor*>( "auto-aof-rewrite-min-size",      &fp1 ),    // auto-aof-rewrite-min-size [number]
+    std::pair<string, ParamExtractor*>( "lua-time-limit",                 &fp1 ),    // lua-time-limit [number]
+    std::pair<string, ParamExtractor*>( "slowlog-log-slower-than",        &fp1 ),    // slowlog-log-slower-than [number]
+    std::pair<string, ParamExtractor*>( "slowlog-max-len",                &fp1 ),    // slowlog-max-len [number]
+    std::pair<string, ParamExtractor*>( "notify-keyspace-events",         &fp1 ),    // notify-keyspace-events [string]
+    std::pair<string, ParamExtractor*>( "hash-max-ziplist-entries",       &fp1 ),    // hash-max-ziplist-entries [number]
+    std::pair<string, ParamExtractor*>( "hash-max-ziplist-value",         &fp1 ),    // hash-max-ziplist-value [number]
+    std::pair<string, ParamExtractor*>( "list-max-ziplist-entries",       &fp1 ),    // list-max-ziplist-entries [number]
+    std::pair<string, ParamExtractor*>( "list-max-ziplist-value",         &fp1 ),    // list-max-ziplist-value [number]
+    std::pair<string, ParamExtractor*>( "set-max-intset-entries",         &fp1 ),    // set-max-intset-entries [number]
+    std::pair<string, ParamExtractor*>( "zset-max-ziplist-entries",       &fp1 ),    // zset-max-ziplist-entries [number]
+    std::pair<string, ParamExtractor*>( "zset-max-ziplist-value",         &fp1 ),    // zset-max-ziplist-value [number]
+    std::pair<string, ParamExtractor*>( "hll-sparse-max-bytes",           &fp1 ),    // hll-sparse-max-bytes [number]
+    std::pair<string, ParamExtractor*>( "activerehashing",                &fp1 ),    // activerehashing [yes/no]
+    std::pair<string, ParamExtractor*>( "client-output-buffer-limit",     &fp4 ),    // client-output-buffer-limit [class] [hard limit] [soft limit] [soft seconds]
+    std::pair<string, ParamExtractor*>( "hz",                             &fp1 ),    // hz [number]
+    std::pair<string, ParamExtractor*>( "aof-rewrite-incremental-fsync",  &fp1 ),    // aof-rewrite-incremental-fsync [yes/no]
+    std::pair<string, ParamExtractor*>( "aof-load-truncated",             &fp1 ),    // aof-load-truncated [yes/no]
+    std::pair<string, ParamExtractor*>( "latency-monitor-threshold",      &fp1 ),    // latency-monitor-threshold [number]
+    std::pair<string, ParamExtractor*>( cInclude,                         &fp1 ),    // include [path]
 
     // sentinel commands
-    { "sentinel",                       &sp },
+    std::pair<string, ParamExtractor*>( "sentinel",                       &sp ),
 
     // cluster commands
-    {"cluster-enabled",                 &fp1},     // [yes/no]
-    {"cluster-config-file",             &fp1},     // [filename]
-    {"cluster-node-timeout",            &fp1},     // [number]
-    {"cluster-slave-validity-factor",   &fp1},     // [number]
-    {"cluster-migration-barrier",       &fp1},     // [1/0]
-    {"cluster-require-full-coverage",   &fp1}      // [yes/no]
+    std::pair<string, ParamExtractor*>("cluster-enabled",                 &fp1),     // [yes/no]
+    std::pair<string, ParamExtractor*>("cluster-config-file",             &fp1),     // [filename]
+    std::pair<string, ParamExtractor*>("cluster-node-timeout",            &fp1),     // [number]
+    std::pair<string, ParamExtractor*>("cluster-slave-validity-factor",   &fp1),     // [number]
+    std::pair<string, ParamExtractor*>("cluster-migration-barrier",       &fp1),     // [1/0]
+    std::pair<string, ParamExtractor*>("cluster-require-full-coverage",   &fp1)      // [yes/no]
 };
+// Map of argument name to argument processing engine.
+static RedisParamterMapper g_redisArgMap = RedisParamterMapper(g_redisArgMap_init_array, g_redisArgMap_init_array + sizeof(g_redisArgMap_init_array) / sizeof(std::pair<string, ParamExtractor*>));
+
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
@@ -515,7 +528,11 @@ void ParseConfFile(string confFile, string cwd, ArgumentMap& argMap) {
     char fullConfFilePath[MAX_PATH];
     if (PathIsRelativeA(confFile.c_str())) {
         if (NULL == PathCombineA(fullConfFilePath, cwd.c_str(), confFile.c_str())) {
+#if _MSC_VER >= 1800
             throw std::system_error(GetLastError(), system_category(), "PathCombineA failed");
+#else
+			throw std::runtime_error("PathCombineA failed");
+#endif
         }
     } else {
         strcpy(fullConfFilePath, confFile.c_str());
@@ -530,7 +547,11 @@ void ParseConfFile(string confFile, string cwd, ArgumentMap& argMap) {
         char confFileDir[MAX_PATH];
         strcpy(confFileDir, fullConfFilePath);
         if (FALSE == PathRemoveFileSpecA(confFileDir)) {
+#if _MSC_VER >= 1800
             throw std::system_error(GetLastError(), system_category(), "PathRemoveFileSpecA failed");
+#else
+			throw std::runtime_error("PathRemoveFileSpecA failed");
+#endif
         }
         g_pathsAccessed.push_back(confFileDir);
     }
@@ -556,7 +577,8 @@ void ParseConfFile(string confFile, string cwd, ArgumentMap& argMap) {
     }
 }
 
-vector<string> incompatibleNoPersistenceCommands{
+string incompatibleNoPersistenceCommands_init_array[] =
+{
     "min_slaves_towrite",
     "min_slaves_max_lag",
     "appendonly",
@@ -568,14 +590,17 @@ vector<string> incompatibleNoPersistenceCommands{
     "aof_rewrite_incremental_fsync",
     "save"
 };
+vector<string> incompatibleNoPersistenceCommands(incompatibleNoPersistenceCommands_init_array, incompatibleNoPersistenceCommands_init_array + sizeof(incompatibleNoPersistenceCommands_init_array) / sizeof(string));
 
 void ValidateCommandlineCombinations() {
     if (g_argMap.find(cPersistenceAvailable) != g_argMap.end()) {
         if (g_argMap[cPersistenceAvailable].at(0).at(0) == cNo) {
             string incompatibleCommand = "";
-            for (auto command : incompatibleNoPersistenceCommands) {
-                if (g_argMap.find(command) != g_argMap.end()) {
-                    incompatibleCommand = command;
+			vector<string>::iterator iter = incompatibleNoPersistenceCommands.begin();
+			for (; iter!=incompatibleNoPersistenceCommands.end(); ++iter)
+			{
+                if (g_argMap.find(*iter) != g_argMap.end()) {
+                    incompatibleCommand = *iter;
                     break;
                 }
             }
@@ -618,8 +643,9 @@ void ParseCommandLineArguments(int argc, char** argv) {
                 if (argument == cSentinel) {
                     try {
                         vector<string> sentinelSubCommands = g_redisArgMap[argument]->Extract(n, argc, argv);
-                        for (auto p : sentinelSubCommands) {
-                            params.push_back(p);
+						vector<string>::iterator iter = sentinelSubCommands.begin();
+						for(; iter!=sentinelSubCommands.end(); ++iter){
+                            params.push_back(*iter);
                         }
                     }
                     catch (invalid_argument iaerr) {
@@ -630,14 +656,22 @@ void ParseCommandLineArguments(int argc, char** argv) {
                     // directory the executable is in so that the .conf file can be loaded.
                     char szFilePath[MAX_PATH];
                     if (GetModuleFileNameA(NULL, szFilePath, MAX_PATH) == 0) {
-                        throw std::system_error(GetLastError(), system_category(), "ParseCommandLineArguments: GetModuleFileName failed");
+#if _MSC_VER >= 1800
+						throw std::system_error(GetLastError(), system_category(), "ParseCommandLineArguments: GetModuleFileName failed");
+#else
+						throw std::runtime_error("ParseCommandLineArguments: GetModuleFileName failed");
+#endif
                     }
                     string currentDir = szFilePath;
-                    auto pos = currentDir.rfind("\\");
+                    size_t pos = currentDir.rfind("\\");
                     currentDir.erase(pos);
 
                     if (FALSE == SetCurrentDirectoryA(currentDir.c_str())) {
-                        throw std::system_error(GetLastError(), system_category(), "SetCurrentDirectory failed");
+#if _MSC_VER >= 1800
+						throw std::system_error(GetLastError(), system_category(), "SetCurrentDirectory failed");
+#else
+						throw std::runtime_error("SetCurrentDirectory failed");
+#endif
                     }
                 } else {
                     params = g_redisArgMap[argument]->Extract(n, argc, argv);
@@ -655,7 +689,11 @@ void ParseCommandLineArguments(int argc, char** argv) {
 
     char cwd[MAX_PATH];
     if (0 == ::GetCurrentDirectoryA(MAX_PATH, cwd)) {
-        throw std::system_error(GetLastError(), system_category(), "ParseCommandLineArguments: GetCurrentDirectoryA failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "ParseCommandLineArguments: GetCurrentDirectoryA failed");
+#else
+		throw std::runtime_error("ParseCommandLineArguments: GetCurrentDirectoryA failed");
+#endif
     }
     
     if (confFile) {
@@ -671,7 +709,11 @@ void ParseCommandLineArguments(int argc, char** argv) {
     if (PathIsRelativeA(fileCreationDirectory.c_str())) {
         char fullPath[MAX_PATH];
         if (NULL == PathCombineA(fullPath, cwd, fileCreationDirectory.c_str())) {
-            throw std::system_error(GetLastError(), system_category(), "PathCombineA failed");
+#if _MSC_VER >= 1800
+		throw std::system_error(GetLastError(), system_category(), "PathCombineA failed");
+#else
+		throw std::runtime_error("PathCombineA failed");
+#endif
         }
         fileCreationDirectory = fullPath;
     }

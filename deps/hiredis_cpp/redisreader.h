@@ -2,6 +2,7 @@
 #define _REDISREADER_H_
 
 #include <string>
+#include "redisreply.h"
 #include "global.h"
 
 struct redisReader;
@@ -9,23 +10,27 @@ struct redisReader;
 namespace HIREDIS_CPP
 {
 
+class RedisReply;
+
 class DllExport RedisReader
 {
 	friend class HiredisCpp;
 public:
-	virtual ~RedisReader() {}
-	bool isValid();
+	virtual ~RedisReader();
+	bool isValid() const;
 	void cleanup();
 
 	int feed(const std::string &in_data);
-	int getReply(void **reply);
+	const RedisReply& getReply();
 
 private:
-	RedisReader();
+	RedisReader(const bool in_create_hiredis_reader = true);
 	RedisReader(const RedisReader& other);
 	RedisReader& operator=(const RedisReader&);
 
 	redisReader* m_p_hiredis_reader;
+	redisReply* m_p_hiredis_reply;
+	RedisReply m_default_reply;
 };
 
 } //namespace
