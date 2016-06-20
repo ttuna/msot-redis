@@ -11,6 +11,43 @@ using namespace HIREDIS_CPP;
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+std::vector<RedisReply*> RedisReply::createReply(const redisReply* in_reply)
+{
+	if (in_reply == 0) return std::vector<RedisReply*>();
+
+	std::vector<RedisReply*> ret;
+	RedisReply* rep = 0;
+	switch (in_reply->type)
+	{
+		case REDIS_REPLY_STRING:
+		case REDIS_REPLY_ERROR:
+		case REDIS_REPLY_STATUS:
+		case REDIS_REPLY_INTEGER:
+		{
+			rep = new RedisReply;
+			if (rep == 0) return std::vector<RedisReply*>();
+
+			rep->m_p_hiredis_reply = const_cast<redisReply*>(in_reply);
+			ret.push_back(rep);
+		}
+		case REDIS_REPLY_ARRAY:
+		{
+			for (int i=0; i<in_reply->elements; ++i)
+			{
+				std::vector<RedisReply*> buffer;
+				buffer = createReply(in_reply->element[i]);
+				if (buffer.size() == 0) continue;
+
+				ret.push_back(buffer[0]);
+			}
+		}
+	}
+	return ret;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 RedisReply::RedisReply() :
 	m_p_hiredis_reply(0)
 {
@@ -70,14 +107,14 @@ void *RedisReply::getData()
 
 	switch (m_p_hiredis_reply->type)
 	{
-	case REDIS_REPLY_STRING:
-	case REDIS_REPLY_ERROR:
-	case REDIS_REPLY_STATUS:
-		return (void*)m_p_hiredis_reply->str;
-	case REDIS_REPLY_ARRAY:
-		//return (void*)m_p_hiredis_reply->element;
-	case REDIS_REPLY_INTEGER:
-		return (void*)&m_p_hiredis_reply->integer;
+		case REDIS_REPLY_STRING:
+		case REDIS_REPLY_ERROR:
+		case REDIS_REPLY_STATUS:
+			return (void*)m_p_hiredis_reply->str;
+		case REDIS_REPLY_ARRAY:
+			//return (void*)m_p_hiredis_reply->element;
+		case REDIS_REPLY_INTEGER:
+			return (void*)&m_p_hiredis_reply->integer;
 	}
 	// TODO ...
 }
@@ -91,18 +128,18 @@ std::string RedisReply::getStringData() const
 
 	switch (m_p_hiredis_reply->type)
 	{
-	case REDIS_REPLY_STRING:
-	case REDIS_REPLY_ERROR:
-	case REDIS_REPLY_STATUS:
-		return m_p_hiredis_reply->str;
-	case REDIS_REPLY_ARRAY:
-		return "ArrayData...";
-	case REDIS_REPLY_INTEGER:
-	{
-		char buffer[21];
-		sprintf(buffer,"%d",m_p_hiredis_reply->integer);
-		return std::string(buffer);
-	}
+		case REDIS_REPLY_STRING:
+		case REDIS_REPLY_ERROR:
+		case REDIS_REPLY_STATUS:
+			return m_p_hiredis_reply->str;
+		case REDIS_REPLY_ARRAY:
+			return "ArrayData...";
+		case REDIS_REPLY_INTEGER:
+		{
+			char buffer[21];
+			sprintf(buffer,"%d",m_p_hiredis_reply->integer);
+			return std::string(buffer);
+		}
 	}
 	// TODO ...
 }

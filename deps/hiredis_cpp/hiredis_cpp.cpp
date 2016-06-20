@@ -6,6 +6,7 @@
 #include "../hiredis/hiredis.h"
 #endif
 #include "../hiredis/async.h"
+#include "../hiredis/adapters/ae.h"
 
 #include <iostream>
 #include <assert.h>
@@ -79,16 +80,21 @@ bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bo
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool HiredisCpp::connectAsync(const std::string &in_host, const int in_port, RedisStatusCallback* in_connect_callback, RedisStatusCallback* in_disconnect_callback)
+bool HiredisCpp::connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback, RedisCallback* in_disconnect_callback)
 {
 	if (in_host.empty()) return false;
 	if (in_port == 0) return false;
 
-	m_connect_callback.m_p_status_callback = (in_connect_callback == 0) ?  defaultConnectCallback : in_connect_callback;
-	m_disconnect_callback.m_p_status_callback = (in_disconnect_callback == 0) ? defaultDisconnectCallback : in_disconnect_callback;
+	m_connect_callback.m_p_status_callback = (in_connect_callback == 0) ?  defaultConnectCallback : in_connect_callback->m_p_status_callback;
+	m_disconnect_callback.m_p_status_callback = (in_disconnect_callback == 0) ? defaultDisconnectCallback : in_disconnect_callback->m_p_status_callback;
+
+	m_p_event_loop = aeCreateEventLoop(1024 * 10);
 
 	redisAsyncContext* ctx = redisAsyncConnect(in_host.data(), in_port);
 	if (ctx == 0) return false;
+
+	redisAsyncSetConnectCallback(ctx, m_connect_callback.backendStatusCallback);
+	redisAsyncSetDisconnectCallback(ctx, m_disconnect_callback.backendStatusCallback);
 
 	m_redis_ctx.cleanup();
 	m_redis_ctx.m_context.hiredis_async_ctx = ctx;
@@ -139,21 +145,30 @@ RedisReader& HiredisCpp::getReader(const bool in_default)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-const RedisReply& HiredisCpp::exec(const std::string &in_command_string, RedisCommandCallback* in_callback)
+const RedisReply* HiredisCpp::exec(const std::string &in_command_string, RedisCallback* in_callback, void* in_pdata)
 {
 	if (in_command_string.empty() == false)
 	{
-		int idx = prepareCommands(1);
-
 		redisReply* reply = 0;
 		if (m_redis_ctx.m_is_async == false)
+		{
 			reply = static_cast<redisReply*>(redisCommand(m_redis_ctx.m_context.hiredis_ctx, in_command_string.data()));
+			std::vector<RedisReply*> replies = RedisReply::createReply(reply);
 
-		//m_command_cache[0]->m_command_string = in_command_string;
-		//m_command_cache[0]->m_reply.m_p_hiredis_reply = reply;
+			if (replies.size() == 0) return 0;
+			return replies[0];
+		}
+		else
+		{
+			if (redisAsyncCommand(m_redis_ctx.m_context.hiredis_async_ctx, &in_callback->backendCommandCallback, in_pdata, in_command_string.data()) == REDIS_ERR)
+			{
+				std::cout << "redisAsyncCommand failed for " << in_command_string << std::endl;
+			}
+			return 0;
+		}
 	}
 
-	return m_command_cache[0]->m_reply;
+	return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -165,17 +180,7 @@ const std::vector<RedisReply*> HiredisCpp::exec(const std::vector<std::string> &
 
 	if (in_command_vector.empty() == false)
 	{
-		int idx = prepareCommands(in_command_vector.size());
-		if (idx < 0) return std::vector<RedisReply*>();
 
 
 	}
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-int HiredisCpp::prepareCommands(const unsigned int in_count)
-{
-
 }

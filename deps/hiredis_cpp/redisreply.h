@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include <string>
+#include <vector>
 
 struct redisReply;
 
@@ -26,6 +27,7 @@ public:
 	std::string getStringData() const;
 
 private:
+	static std::vector<RedisReply*> createReply(const redisReply* in_reply);
 	RedisReply();
 	RedisReply(const RedisReply& other);
 	RedisReply& operator=(const RedisReply&);
