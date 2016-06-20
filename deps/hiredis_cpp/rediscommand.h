@@ -13,6 +13,7 @@ class RedisReply;
 class DllExport RedisCommand
 {
 	friend class HiredisCpp;
+	friend class RedisCommandCache;
 public:
 	virtual ~RedisCommand();
 	bool isValid() const;
@@ -22,7 +23,7 @@ public:
 	const RedisReply& getReply() const;
 
 private:
-	RedisCommand(const std::string &in_cmd);
+	RedisCommand(const std::string &in_cmd = std::string(""));
 	RedisCommand(const RedisCommand& other);
 	RedisCommand& operator=(const RedisCommand&);
 

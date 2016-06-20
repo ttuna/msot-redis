@@ -14,6 +14,7 @@ class DllExport RedisReply
 	friend class HiredisCpp;
 	friend class RedisReader;
 	friend class RedisCommand;
+	friend class RedisCallback;
 public:
 	virtual ~RedisReply();
 	bool isValid() const;

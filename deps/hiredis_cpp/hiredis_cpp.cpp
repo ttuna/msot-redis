@@ -1,9 +1,4 @@
 #include "hiredis_cpp.h"
-#include "rediscontext.h"
-#include "redisreader.h"
-#include "rediscommand.h"
-#include "redisreply.h"
-#include <assert.h>
 
 #ifdef _WIN32
 #include "../hiredis/win32_hiredis.h"
@@ -12,18 +7,41 @@
 #endif
 #include "../hiredis/async.h"
 
+#include <iostream>
+#include <assert.h>
+
 using namespace HIREDIS_CPP;
 
-const int CONNECT_TIMEOUT_SEC = 5;
-const int MAX_HISTORY_ENTRIES = 10;
+namespace {
+// FRONTEND: default connect-callback ...
+void defaultConnectCallback(int status)
+{
+	if(status != REDIS_OK)
+		std::cout << "Connection failed!" << std::endl;
+	else
+		std::cout << "Connected ..." << std::endl;
+};
+
+// FRONTEND: default disconnect-callback ...
+void defaultDisconnectCallback(int status)
+{
+	if(status != REDIS_OK)
+		std::cout << "Couldn't disconnect" << std::endl;
+	else
+		std::cout << "Disconnected ..." << std::endl;
+};
+
+}
+
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 HiredisCpp::HiredisCpp() :
 	m_redis_ctx(),
 	m_default_reader(false),
-	m_last_command("")
+	m_command_cache(MAX_COMMAND_ENTRIES)
 {
+	
 }
 
 HiredisCpp::~HiredisCpp()
@@ -61,10 +79,13 @@ bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bo
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool HiredisCpp::connectAsync(const std::string &in_host, const int in_port)
+bool HiredisCpp::connectAsync(const std::string &in_host, const int in_port, RedisStatusCallback* in_connect_callback, RedisStatusCallback* in_disconnect_callback)
 {
 	if (in_host.empty()) return false;
 	if (in_port == 0) return false;
+
+	m_connect_callback.m_p_status_callback = (in_connect_callback == 0) ?  defaultConnectCallback : in_connect_callback;
+	m_disconnect_callback.m_p_status_callback = (in_disconnect_callback == 0) ? defaultDisconnectCallback : in_disconnect_callback;
 
 	redisAsyncContext* ctx = redisAsyncConnect(in_host.data(), in_port);
 	if (ctx == 0) return false;
@@ -118,25 +139,43 @@ RedisReader& HiredisCpp::getReader(const bool in_default)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-const RedisReply& HiredisCpp::exec(const std::string &in_command_string)
+const RedisReply& HiredisCpp::exec(const std::string &in_command_string, RedisCommandCallback* in_callback)
 {
-	resetLastCommand();
-
 	if (in_command_string.empty() == false)
 	{
-		redisReply* reply = static_cast<redisReply*>(redisCommand(m_redis_ctx.m_context.hiredis_ctx, in_command_string.data()));
-		m_last_command.m_command_string = in_command_string;
-		m_last_command.m_reply.m_p_hiredis_reply = reply;
+		int idx = prepareCommands(1);
+
+		redisReply* reply = 0;
+		if (m_redis_ctx.m_is_async == false)
+			reply = static_cast<redisReply*>(redisCommand(m_redis_ctx.m_context.hiredis_ctx, in_command_string.data()));
+
+		//m_command_cache[0]->m_command_string = in_command_string;
+		//m_command_cache[0]->m_reply.m_p_hiredis_reply = reply;
 	}
 
-	return m_last_command.m_reply;
+	return m_command_cache[0]->m_reply;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::resetLastCommand()
+const std::vector<RedisReply*> HiredisCpp::exec(const std::vector<std::string> &in_command_vector)
 {
-	m_last_command.m_command_string = "";
-	m_last_command.m_reply.cleanup();
+	if (m_redis_ctx.m_is_async = true) return std::vector<RedisReply*>();
+
+	if (in_command_vector.empty() == false)
+	{
+		int idx = prepareCommands(in_command_vector.size());
+		if (idx < 0) return std::vector<RedisReply*>();
+
+
+	}
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+int HiredisCpp::prepareCommands(const unsigned int in_count)
+{
+
 }
