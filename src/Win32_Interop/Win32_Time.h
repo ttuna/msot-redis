@@ -32,6 +32,10 @@
 #include "../../extern/include/stdint.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define gettimeofday gettimeofday_highres
 
 void     InitTimeFunctions();
@@ -39,5 +43,9 @@ uint64_t GetHighResRelativeTime(double scale);
 time_t   gettimeofdaysecs(unsigned int *usec);
 int      gettimeofday_highres(struct timeval *tv, struct timezone *tz);
 char*    ctime_r(const time_t *clock, char *buf);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

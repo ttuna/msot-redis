@@ -12,6 +12,7 @@ namespace HIREDIS_CPP
 class DllExport RedisContext
 {
 	friend class HiredisCpp;
+	friend class AsyncConnectThreadData;
 public:
 	virtual ~RedisContext();
 	bool isValid() const;

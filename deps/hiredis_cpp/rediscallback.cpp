@@ -1,14 +1,11 @@
 #include "rediscallback.h"
 #include "redisreply.h"
 
-#ifdef _WIN32
 #include "../hiredis/win32_hiredis.h"
-#else
-#include "../hiredis/hiredis.h"
-#endif
 #include "../hiredis/async.h"
 
 using namespace HIREDIS_CPP;
+using namespace std::tr1::placeholders; 
 
 // ----------------------------------------------------------------------------
 //
@@ -18,6 +15,14 @@ RedisCallback::RedisCallback() :
 	m_p_command_callback(0),
 	m_delete_after_exec(false)
 {
+	m_p_backend_status_callback = &RedisCallback::backendStatusCallback;
+	m_p_backend_command_callback = &RedisCallback::backendCommandCallback;
+	
+	
+	m_status_func = std::tr1::bind(&RedisCallback::backendStatusCallback, this, _1, _2);
+	m_command_func = std::tr1::bind(&RedisCallback::backendCommandCallback, this, _1, _2, _3);
+
+	// TODO: find a way to pass std::tr1::function to ANSI C function pointer ... :-(
 }
 
 RedisCallback::~RedisCallback()
@@ -44,7 +49,7 @@ void RedisCallback::cleanup()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void RedisCallback::backendStatusCallback(struct redisAsyncContext* in_ctx, int in_status)
+void RedisCallback::backendStatusCallback(const struct redisAsyncContext* in_ctx, int in_status)
 {
 	if (m_p_status_callback == 0) return;
 	m_p_status_callback(in_status);

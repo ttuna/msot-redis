@@ -27,12 +27,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef __ADLIST_H__
+#define __ADLIST_H__
+
 #ifdef _WIN32
 #include "Win32_Interop/Win32_Portability.h"
 #endif
 
-#ifndef __ADLIST_H__
-#define __ADLIST_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Node, List, and Iterator are the only data structures used currently. */
 
@@ -92,5 +96,9 @@ void listRotate(list *list);
 /* Directions for iterators */
 #define AL_START_HEAD 0
 #define AL_START_TAIL 1
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ADLIST_H__ */

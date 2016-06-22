@@ -86,7 +86,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>hiredis_2008_cpp.lib;$(ProjectDir)..\..\extern\lib\event.lib;$(ProjectDir)..\..\extern\lib\event_core.lib;$(ProjectDir)..\..\extern\lib\event_extra.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>hiredis_2008_cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(TargetDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

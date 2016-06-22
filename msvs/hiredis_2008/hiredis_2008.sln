@@ -9,12 +9,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hiredis_2008_cpp", "..\hire
 		{31BEC592-0551-4D4B-ADAA-9A4E74E0F036} = {31BEC592-0551-4D4B-ADAA-9A4E74E0F036}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win32_interop_2008", "..\win32_interop\win32_interop.vcxproj", "{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hiredis_2008_cpp_example", "..\hiredis_2008_cpp_example\hiredis_2008_cpp_example.vcxproj", "{C8B5B02B-4BAC-49C4-B730-116847D59C2A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{09BE384E-39EA-4F5E-97B4-1532AB1BDD55} = {09BE384E-39EA-4F5E-97B4-1532AB1BDD55}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hiredis_2008_win32_interop", "..\hiredis_2008_win32_interop\hiredis_2008_win32_interop.vcxproj", "{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,12 +35,6 @@ Global
 		{09BE384E-39EA-4F5E-97B4-1532AB1BDD55}.Debug|Win32.Build.0 = Debug|Win32
 		{09BE384E-39EA-4F5E-97B4-1532AB1BDD55}.Release|Win32.ActiveCfg = Release|Win32
 		{09BE384E-39EA-4F5E-97B4-1532AB1BDD55}.Release|Win32.Build.0 = Release|Win32
-		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug_2008|Win32.ActiveCfg = Debug_2008|Win32
-		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug_2008|Win32.Build.0 = Debug_2008|Win32
-		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug|Win32.Build.0 = Debug|Win32
-		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Release|Win32.ActiveCfg = Release|Win32
-		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Release|Win32.Build.0 = Release|Win32
 		{C8B5B02B-4BAC-49C4-B730-116847D59C2A}.Debug_2008|Win32.ActiveCfg = Debug_2008|Win32
 		{C8B5B02B-4BAC-49C4-B730-116847D59C2A}.Debug_2008|Win32.Build.0 = Debug_2008|Win32
 		{C8B5B02B-4BAC-49C4-B730-116847D59C2A}.Debug_2008|Win32.Deploy.0 = Debug_2008|Win32
@@ -50,6 +44,12 @@ Global
 		{C8B5B02B-4BAC-49C4-B730-116847D59C2A}.Release|Win32.ActiveCfg = Release|Win32
 		{C8B5B02B-4BAC-49C4-B730-116847D59C2A}.Release|Win32.Build.0 = Release|Win32
 		{C8B5B02B-4BAC-49C4-B730-116847D59C2A}.Release|Win32.Deploy.0 = Release|Win32
+		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug_2008|Win32.ActiveCfg = Debug_2008|Win32
+		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug_2008|Win32.Build.0 = Debug_2008|Win32
+		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Debug|Win32.Build.0 = Debug|Win32
+		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Release|Win32.ActiveCfg = Release|Win32
+		{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

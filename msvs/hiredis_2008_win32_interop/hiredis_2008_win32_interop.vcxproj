@@ -17,7 +17,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FF60001B-F7CD-47F2-9D06-7CA7FCBE3F9D}</ProjectGuid>
     <RootNamespace>win32_interop</RootNamespace>
-    <ProjectName>win32_interop_2008</ProjectName>
+    <ProjectName>hiredis_2008_win32_interop</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -77,6 +77,9 @@
     <Lib>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -110,6 +113,7 @@
     <ClInclude Include="..\..\src\Win32_Interop\win32_rfdmap.h" />
     <ClInclude Include="..\..\src\Win32_Interop\Win32_Service.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_smarthandle.h" />
+    <ClInclude Include="..\..\src\Win32_Interop\win32_time.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_types.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_types_hiredis.h" />
     <ClInclude Include="..\..\src\Win32_Interop\win32_variadicfunctor.h" />

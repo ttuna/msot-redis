@@ -69,8 +69,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	// async client ...
-	HiredisCpp client_3;
-	// TODO...
+	//HiredisCpp client_3;
+	//HANDLE thread_handle;
+	//if ((thread_handle = client_3.connectAsync("127.0.0.1", 6379)) == 0)
+	//{
+	//	std::cout << "client 3 - connection failed! Exit ..." << std::endl;
+	//}
+
+	//WaitForSingleObject(thread_handle, INFINITE);
 
 	return 0;
 }

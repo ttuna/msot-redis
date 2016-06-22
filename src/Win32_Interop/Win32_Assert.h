@@ -23,10 +23,18 @@
 #ifndef WIN32_INTEROP_ASSERT_H
 #define WIN32_INTEROP_ASSERT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _DEBUG
 #define ASSERT(condition)  do { if(!(condition)){ fprintf(stderr, "Assertion failed: %s @ %s::%s (%d)\n", #condition , __FILE__, __FUNCTION__, __LINE__); DebugBreak();} } while(0)
 #else
 #define ASSERT(condition) 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

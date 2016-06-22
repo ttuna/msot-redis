@@ -1,10 +1,6 @@
 #include "rediscontext.h"
 
-#ifdef _WIN32
 #include "../hiredis/win32_hiredis.h"
-#else
-#include "../hiredis/hiredis.h"
-#endif
 #include "../hiredis/async.h"
 
 using namespace HIREDIS_CPP;

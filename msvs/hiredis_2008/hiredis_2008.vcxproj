@@ -76,6 +76,10 @@
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
+    <Lib>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -92,6 +96,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\deps\hiredis\adapters\ae.h" />
+    <ClInclude Include="..\..\deps\hiredis\adapters\libev.h" />
+    <ClInclude Include="..\..\deps\hiredis\adapters\libevent.h" />
+    <ClInclude Include="..\..\deps\hiredis\adapters\libuv.h" />
     <ClInclude Include="..\..\deps\hiredis\async.h" />
     <ClInclude Include="..\..\deps\hiredis\dict.h" />
     <ClInclude Include="..\..\deps\hiredis\fmacros.h" />

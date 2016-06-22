@@ -35,6 +35,10 @@
 #include "Win32_Interop/Win32_Portability.h"
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Double expansion needed for stringification of macro values. */
 #define __xstr(s) __str(s)
 #define __str(s) #s
@@ -92,6 +96,10 @@ WIN32_ONLY(void zmalloc_free_used_memory_mutex(void);)
 
 #ifndef HAVE_MALLOC_SIZE
 size_t zmalloc_size(void *ptr);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* __ZMALLOC_H */

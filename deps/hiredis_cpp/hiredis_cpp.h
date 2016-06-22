@@ -27,7 +27,7 @@ public:
 	virtual ~HiredisCpp();
 	
 	bool connect(const std::string &in_host, const int in_port, const bool in_blocking = true, const int in_timeout_sec = -1);
-	bool connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback = 0, RedisCallback* in_disconnect_callback = 0);
+	void* connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback = 0, RedisCallback* in_disconnect_callback = 0);
 	int setTimeout(const int in_seconds);
 	int enableKeepAlive();
 
@@ -40,13 +40,14 @@ private:
 	HiredisCpp& operator=(const HiredisCpp&);
 
 	void resetRedisCtx();
-
 	RedisContext m_redis_ctx;
-	aeEventLoop *m_p_event_loop;
 	RedisReader m_default_reader;
 	RedisCallback m_connect_callback;
 	RedisCallback m_disconnect_callback;
 	RedisCommandCache m_command_cache;		// unused for now ...
+
+	void* m_thread_handle;
+	unsigned long m_thread_id;
 };
 
 } // namespace

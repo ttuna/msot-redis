@@ -30,6 +30,11 @@
 #include "win32_fdapi.h"    
 #include "win32_apis.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #define WNOHANG 1
 
 /* file mapping */
@@ -41,20 +46,11 @@
 #define MAP_SHARED 1
 #define MAP_PRIVATE 2
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 /* strtod does not handle Inf and Nan, we need to do the check before calling strtod */
 #undef strtod
 #define strtod(nptr, eptr) wstrtod((nptr), (eptr))
 
 double wstrtod(const char *nptr, char **eptr);
-
-#ifdef __cplusplus
-}
-#endif
 
 // access check for executable uses X_OK. For Windows use READ access.
 #ifndef X_OK
@@ -63,6 +59,10 @@ double wstrtod(const char *nptr, char **eptr);
 
 #ifndef STDOUT_FILENO
 #define STDOUT_FILENO 1
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* WIN32FIXES_H */

@@ -1,11 +1,7 @@
 #include "redisreader.h"
 #include "redisreply.h"
 
-#ifdef _WIN32
 #include "../hiredis/win32_hiredis.h"
-#else
-#include "../hiredis/hiredis.h"
-#endif
 
 using namespace HIREDIS_CPP;
 

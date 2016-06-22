@@ -21,6 +21,10 @@
 */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Log levels */
 #define REDIS_DEBUG 0
 #define REDIS_VERBOSE 1
@@ -34,10 +38,6 @@
  * write atomically.
  */
 #define REDIS_MAX_LOGMSG_LEN    1024
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void setLogVerbosityLevel(int level);
 void setLogFile(const char* filename);
