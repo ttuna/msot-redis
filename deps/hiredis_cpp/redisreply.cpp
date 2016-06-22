@@ -25,7 +25,7 @@ std::vector<RedisReply*> RedisReply::createReply(const redisReply* in_reply)
 
 			rep->m_p_hiredis_reply = const_cast<redisReply*>(in_reply);
 			ret.push_back(rep);
-		}
+		} break;
 		case REDIS_REPLY_ARRAY:
 		{
 			for (int i=0; i<in_reply->elements; ++i)
@@ -34,9 +34,9 @@ std::vector<RedisReply*> RedisReply::createReply(const redisReply* in_reply)
 				buffer = createReply(in_reply->element[i]);
 				if (buffer.size() == 0) continue;
 
-				ret.push_back(buffer[0]);
+				ret.insert(ret.end(), buffer.begin(), buffer.end()-1);
 			}
-		}
+		} break;
 	}
 	return ret;
 }
@@ -120,22 +120,32 @@ void *RedisReply::getData()
 // ----------------------------------------------------------------------------
 std::string RedisReply::getStringData() const
 {
-	if (m_p_hiredis_reply == 0) return "";
+	if (m_p_hiredis_reply == 0) return "UNVALID REPLY!";
 
+	std::string ret;
 	switch (m_p_hiredis_reply->type)
 	{
 		case REDIS_REPLY_STRING:
 		case REDIS_REPLY_ERROR:
 		case REDIS_REPLY_STATUS:
-			return m_p_hiredis_reply->str;
+			ret = m_p_hiredis_reply->str;
+			break;
 		case REDIS_REPLY_ARRAY:
-			return "ArrayData...";
+			ret =  "ArrayData...";
+			break;
 		case REDIS_REPLY_INTEGER:
 		{
 			char buffer[21];
 			sprintf(buffer,"%d",m_p_hiredis_reply->integer);
-			return std::string(buffer);
-		}
+			ret = std::string(buffer);
+		} break;
+		case REDIS_REPLY_NIL:
+			ret = "NIL";
+			break;
+		default:
+			ret = "REPLY TYPE UNKNOWN!";
+			break;
 	}
-	// TODO ...
+
+	return ret;
 }

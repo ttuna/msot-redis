@@ -44,8 +44,8 @@ void RedisReader::cleanup()
 	}
 	if (m_p_hiredis_reply != 0)
 	{
-		freeReplyObject((void*)m_p_hiredis_reader);
-		m_p_hiredis_reader = 0;
+		freeReplyObject((void*)m_p_hiredis_reply);
+		m_p_hiredis_reply = 0;
 	}
 }
 

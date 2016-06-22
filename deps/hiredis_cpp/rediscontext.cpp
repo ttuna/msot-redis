@@ -37,7 +37,8 @@ void RedisContext::cleanup()
 	if (m_context.hiredis_ctx == 0) return;
 
 	if (m_is_async)
-		redisAsyncFree(m_context.hiredis_async_ctx);
+		// redisAsyncDisconnect calls redisAsyncFree !!!
+		redisAsyncDisconnect(m_context.hiredis_async_ctx);
 	else
 		redisFree(m_context.hiredis_ctx);
 }

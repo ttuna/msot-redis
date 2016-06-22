@@ -10,6 +10,13 @@ struct redisReply;
 namespace HIREDIS_CPP
 {
 
+typedef struct 
+{
+	std::string str;
+	long long num;
+
+} RedisReplyData;
+
 class DllExport RedisReply
 {
 	friend class HiredisCpp;

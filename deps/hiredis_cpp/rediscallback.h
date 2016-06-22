@@ -20,28 +20,19 @@ class DllExport RedisCallback
 	friend class HiredisCpp;
 	friend class AsyncConnectThreadData;
 public:
-	typedef void (RedisCallback::*RedisBackendStatusCallback)(const struct redisAsyncContext*, int status);
-	typedef void (RedisCallback::*RedisBackendCommandCallback)(struct redisAsyncContext*, void*, void*);
-
+	RedisCallback(RedisStatusCallback* in_status_callback);
+	RedisCallback(RedisCommandCallback* in_command_callback);
 	virtual ~RedisCallback();
 	bool isValid() const;
 	void cleanup();
 
+private:
 	RedisCallback();
 	RedisCallback(const RedisCallback& other);
 	RedisCallback& operator=(const RedisCallback&);
 
-private:
 	RedisStatusCallback* m_p_status_callback;
 	RedisCommandCallback* m_p_command_callback;
-	RedisBackendStatusCallback m_p_backend_status_callback;
-	RedisBackendCommandCallback m_p_backend_command_callback;
-
-	void backendStatusCallback(const struct redisAsyncContext* in_ctx, int in_status);
-	void backendCommandCallback(struct redisAsyncContext* in_ctx, void* in_reply, void* in_pdata);
-
-	std::tr1::function<void(const struct redisAsyncContext*, int status)> m_status_func;
-	std::tr1::function<void(struct redisAsyncContext*, void*, void*)> m_command_func;
 
 	bool m_delete_after_exec;
 };
