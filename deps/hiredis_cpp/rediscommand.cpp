@@ -1,4 +1,7 @@
 #include "rediscommand.h"
+#include "redisreply.h"
+#include "rediscallback.h"
+#include "hiredis_cpp.h"
 
 #include "../hiredis/win32_hiredis.h"
 
@@ -9,8 +12,11 @@ using namespace HIREDIS_CPP;
 // ----------------------------------------------------------------------------
 RedisCommand::RedisCommand(const std::string &in_cmd) :
 	m_command_string(in_cmd),
-	m_reply()
+	m_p_reply(0),
+	m_p_callback(0),
+	m_delete_after_callback_exec(false)
 {
+	m_priv_data.command = this;
 }
 
 RedisCommand::~RedisCommand()
@@ -33,15 +39,18 @@ bool RedisCommand::isValid() const
 void RedisCommand::cleanup()
 {
 	m_command_string = "";
-	m_reply.cleanup();
+	m_p_reply = 0;
+	m_p_callback = 0;
+	m_priv_data.pdata = 0;
+	m_priv_data.command = 0;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-const RedisReply& RedisCommand::getReply() const
+RedisReply* RedisCommand::getReply()
 {
-	return m_reply;
+	return m_p_reply;
 }
 
 // ----------------------------------------------------------------------------
@@ -50,4 +59,12 @@ const RedisReply& RedisCommand::getReply() const
 std::string RedisCommand::getCommandString() const
 {
 	return m_command_string;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+void RedisCommand::setCommandString(const std::string& in_command)
+{
+	m_command_string = in_command;
 }

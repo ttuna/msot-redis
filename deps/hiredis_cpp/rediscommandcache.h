@@ -23,7 +23,6 @@ private:
 	RedisCommandCache& operator=(const RedisCommandCache&);
 
 	std::vector<RedisCommand*> m_data;
-	RedisCommand* m_p_command_array;
 };
 
 }

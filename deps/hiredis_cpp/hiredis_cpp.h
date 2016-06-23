@@ -34,24 +34,27 @@ public:
 	int setTimeout(const int in_seconds);
 	int enableKeepAlive();
 
-	RedisReader& getReader(const bool in_default = false);
-	std::vector<RedisReply*> exec(const std::string &in_command_string, RedisCallback* in_callback = 0, void *in_pdata = 0);
-	std::vector<RedisReply*> exec(const std::vector<std::string> &in_command_vector);
+	RedisReply* exec(const std::string &in_command_string, RedisCallback* in_callback = 0, void *in_pdata = 0);
+	RedisReply* exec(const std::vector<std::string> &in_command_vector);
+	RedisReply* getReply();
 	static void freeRedisReply(RedisReply* in_reply);
-	static void freeRedisReplies(std::vector<RedisReply*>& in_replies);
 	
 private:
 	HiredisCpp(const HiredisCpp& other);
 	HiredisCpp& operator=(const HiredisCpp&);
 
-	static void backendConnectCallback(const struct redisAsyncContext*, int status);
-	static void backendDisconnectCallback(const struct redisAsyncContext*, int status);
+	RedisReader& getReader(const bool in_default = false);	// maybe not necessary ...
+	std::vector<RedisReply*> getPendingReplies();
+
+	static void backendConnectCallback(const struct redisAsyncContext* in_ctx, int status);
+	static void backendDisconnectCallback(const struct redisAsyncContext* in_ctx, int status);
+	static void backendCommandCallback(struct redisAsyncContext* in_ctx, void* in_reply, void* in_pdata);
 
 	RedisContext m_redis_ctx;
 	RedisReader m_default_reader;
 	RedisCallback* m_p_connect_callback;
 	RedisCallback* m_p_disconnect_callback;
-	RedisCommandCache m_command_cache;		// unused for now ...
+	RedisCommandCache m_command_cache;
 
 	void* m_thread_handle;
 	unsigned long m_thread_id;

@@ -258,11 +258,11 @@ using namespace HIREDIS_CPP;
 // ----------------------------------------------------------------------------
 HiredisCpp::HiredisCpp() :
 	m_default_reader(false),
-	m_command_cache(MAX_COMMAND_ENTRIES),
 	m_p_connect_callback(0),
 	m_p_disconnect_callback(0),
 	m_thread_handle(0),
-	m_thread_id(0)
+	m_thread_id(0),
+	m_command_cache(100)
 {
 	
 }
@@ -271,6 +271,8 @@ HiredisCpp::~HiredisCpp()
 {
 	// avoid double freeing of m_p_hiredis_reader which was taken from m_p_hiredis_ctx ...
 	m_default_reader.m_p_hiredis_reader = NULL;
+	disconnect();
+	m_command_cache.cleanup();
 }
 
 // ----------------------------------------------------------------------------
@@ -320,7 +322,7 @@ void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, Re
 	m_thread_handle = CreateThread( 
 							NULL,						// default security attributes
 							0,							// use default stack size  
-							AsyncConnectThreadFunction, // thread function name
+							AsyncConnectThreadFunction, // thread function
 							g_p_thread_data,			// argument to thread function 
 							0,							// use default creation flags 
 							&m_thread_id);				// returns the thread identifier
@@ -333,8 +335,9 @@ void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, Re
 // ----------------------------------------------------------------------------
 bool HiredisCpp::disconnect()
 {
-
 	m_redis_ctx.cleanup();
+	m_p_connect_callback = 0;
+	m_p_disconnect_callback = 0;
 	return true;
 }
 
@@ -381,7 +384,7 @@ RedisReader& HiredisCpp::getReader(const bool in_default)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-std::vector<RedisReply*> HiredisCpp::exec(const std::string &in_command_string, RedisCallback* in_callback, void* in_pdata)
+RedisReply* HiredisCpp::exec(const std::string &in_command_string, RedisCallback* in_callback, void* in_pdata)
 {
 	if (in_command_string.empty() == false)
 	{
@@ -389,38 +392,106 @@ std::vector<RedisReply*> HiredisCpp::exec(const std::string &in_command_string, 
 		if (m_redis_ctx.m_is_async == false)
 		{
 			reply = static_cast<redisReply*>(redisCommand(m_redis_ctx.m_context.hiredis_ctx, in_command_string.data()));
-			std::vector<RedisReply*> replies = RedisReply::createReply(reply);
+			RedisReply* rep = RedisReply::createReply(reply);
 
-			if (replies.size() == 0) return std::vector<RedisReply*>();
-			return replies;
+			return rep;
 		}
 		else
 		{
-			// TODO ...
-			//if (redisAsyncCommand(m_redis_ctx.m_context.hiredis_async_ctx, (redisCallbackFn*)&in_callback->m_p_backend_command_callback, in_pdata, in_command_string.data()) == REDIS_ERR)
-			//{
-			//	std::cout << "redisAsyncCommand failed for " << in_command_string << std::endl;
-			//}
-			return std::vector<RedisReply*>();
+			RedisCommand* command = new RedisCommand(in_command_string);
+			if (command == 0) return 0;
+			
+			command->m_p_callback = in_callback;
+			command->m_priv_data.pdata = in_pdata;
+			//m_command_cache.m_data.push_back(command);
+			
+			if (redisAsyncCommand(m_redis_ctx.m_context.hiredis_async_ctx, (redisCallbackFn*)backendCommandCallback, &command->m_priv_data, in_command_string.data()) == REDIS_ERR)
+			{
+				std::cout << "redisAsyncCommand failed for " << in_command_string << std::endl;
+			}
+			return 0;
 		}
 	}
 
-	return std::vector<RedisReply*>();
+	return 0;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-std::vector<RedisReply*> HiredisCpp::exec(const std::vector<std::string> &in_command_vector)
+RedisReply* HiredisCpp::exec(const std::vector<std::string> &in_command_vector)
 {
-	if (m_redis_ctx.m_is_async = true) return std::vector<RedisReply*>();
+	if (m_redis_ctx.m_is_async == true) return 0;
 
-	if (in_command_vector.empty() == false)
+	RedisReply* rep = 0;
+	if (in_command_vector.size() > 0)
 	{
+		// pipeline commands are only available in sync blocking mode ...
+		if (m_redis_ctx.m_context.hiredis_ctx->flags & REDIS_BLOCK)
+		{
+			std::string command_string;
+			int rv = REDIS_OK;
 
+			// append commands to output buffer ...
+			for (int i=0; i<in_command_vector.size(); ++i)
+			{
+				command_string = in_command_vector.at(i);
+				if (command_string.empty()) continue;
 
+				rv = redisAppendCommand(m_redis_ctx.m_context.hiredis_ctx, command_string.data());
+				if (rv != REDIS_OK) return 0;
+			}
+
+			rep = getReply();
+		}
 	}
-	return std::vector<RedisReply*>();
+	return rep;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+RedisReply* HiredisCpp::getReply()
+{
+	// check if there is any return data ...
+	std::vector<RedisReply*> replies = getPendingReplies();
+	if (replies.size() <= 0) return 0;
+
+	// create envelop for reply array ...
+	RedisReply* ret = new RedisReply();
+	if (ret == 0) return 0;
+
+	ret->m_reply_data.m_arr = replies;
+	ret->m_reply_data.m_type = REDIS_REPLY_TYPE_ARRAY;
+
+	return ret;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+std::vector<RedisReply*> HiredisCpp::getPendingReplies()
+{
+	int rv = REDIS_OK;
+	redisReply* reply = 0;
+	std::vector<RedisReply*> ret;
+
+	// get replies from input buffer if any available ...
+	while (rv == REDIS_OK)
+	{
+		rv = redisGetReply(m_redis_ctx.m_context.hiredis_ctx, (void**)&reply);
+		if (reply == 0) continue;
+
+		RedisReply* rep = RedisReply::createReply(reply);
+		if (rep == 0) continue;
+
+		ret.push_back(rep);
+
+		// nothing more to read ...
+		if (m_redis_ctx.m_context.hiredis_ctx->reader->pos == m_redis_ctx.m_context.hiredis_ctx->reader->len) 
+			break;
+	}
+	return ret;
 }
 
 // ----------------------------------------------------------------------------
@@ -431,17 +502,6 @@ void HiredisCpp::freeRedisReply(RedisReply* in_reply)
 	if (in_reply == 0) return;
 	in_reply->cleanup();
 	delete in_reply;
-}
-
-// ----------------------------------------------------------------------------
-//
-// ----------------------------------------------------------------------------
-void HiredisCpp::freeRedisReplies(std::vector<RedisReply*>& in_replies)
-{
-	if (in_replies.empty()) return;
-
-	for_each(in_replies.begin(), in_replies.end(), freeRedisReply);
-	in_replies.clear();
 }
 
 // ----------------------------------------------------------------------------
@@ -476,4 +536,29 @@ void HiredisCpp::backendDisconnectCallback(const struct redisAsyncContext* in_ct
 
 	if (client->m_p_disconnect_callback != 0 && client->m_p_disconnect_callback->m_p_status_callback != 0)
 		client->m_p_disconnect_callback->m_p_status_callback(in_status);
+}
+
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+void HiredisCpp::backendCommandCallback(struct redisAsyncContext* in_ctx, void* in_reply, void* in_pdata)
+{
+	std::cout << "backendCommandCallback called ..." << std::endl;
+
+	if (in_ctx == 0) return;
+	if (in_reply == 0) return;
+	if (in_pdata == 0) return;
+
+	RedisCommand::CallbackPrivateData* priv_data = (RedisCommand::CallbackPrivateData*)in_pdata;
+	if (priv_data == 0) return;
+
+	RedisCommand* command = priv_data->command;
+	if (command == 0) return;
+
+	command->m_p_reply = RedisReply::createReply((redisReply*)in_reply);
+	if (command->m_p_reply == 0) return;
+
+	if (command->m_p_callback != 0 && command->m_p_callback->m_p_command_callback != 0)
+		command->m_p_callback->m_p_command_callback(command->m_p_reply, priv_data->pdata);
 }

@@ -9,20 +9,8 @@ using namespace HIREDIS_CPP;
 //
 // ----------------------------------------------------------------------------
 RedisCommandCache::RedisCommandCache(unsigned int in_size) :
-	m_data(in_size),
-	m_p_command_array(0)
+	m_data(in_size)
 {
-	if (in_size > 0)
-		m_p_command_array = new RedisCommand[in_size];
-
-	if (m_p_command_array != 0)
-	{
-		// init command cache ...
-		for (int i=0; i<in_size; ++i)
-		{
-			m_data[i] = &m_p_command_array[i];
-		}
-	}
 }
 
 RedisCommandCache::~RedisCommandCache()
@@ -44,9 +32,4 @@ bool RedisCommandCache::isValid() const
 void RedisCommandCache::cleanup()
 {
 	m_data.clear();
-	if (m_p_command_array != 0)
-	{
-		delete[] m_p_command_array;
-		m_p_command_array = 0;
-	}
 }
