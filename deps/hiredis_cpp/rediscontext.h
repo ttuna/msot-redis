@@ -12,11 +12,15 @@ namespace HIREDIS_CPP
 class DllExport RedisContext
 {
 	friend class HiredisCpp;
-	friend class AsyncConnectThreadData;
+	friend class AsyncConnectThreadContext;
 public:
 	virtual ~RedisContext();
 	bool isValid() const;
 	void cleanup();
+	
+	bool isAsync();
+	bool isBlocking();
+	bool isConnected();
 
 private:
 	RedisContext();

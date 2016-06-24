@@ -21,7 +21,6 @@ public:
 
 	std::string getCommandString() const;
 	void setCommandString(const std::string& in_command);
-	RedisReply* getReply();
 
 private:
 	RedisCommand(const std::string &in_cmd = std::string(""));
@@ -30,11 +29,10 @@ private:
 
 	struct CallbackPrivateData {
 		void *pdata;			// the original private data - MUST be first member!!!
-		RedisCommand* command;	// envelop id
+		RedisCommand* command;	// this
 	} m_priv_data;
 
 	std::string m_command_string;
-	RedisReply* m_p_reply;
 	RedisCallback* m_p_callback;
 	bool m_delete_after_callback_exec;
 };

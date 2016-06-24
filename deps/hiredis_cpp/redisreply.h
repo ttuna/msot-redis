@@ -10,16 +10,6 @@ struct redisReply;
 namespace HIREDIS_CPP
 {
 
-enum RedisReplyType {
-	REDIS_REPLY_TYPE_UNKNOWN = 0,
-	REDIS_REPLY_TYPE_STRING = 1,	// = #define REDIS_REPLY_STRING 1 in hiredis.h
-	REDIS_REPLY_TYPE_ARRAY = 2,		// = #define REDIS_REPLY_ARRAY 2 in hiredis.h
-	REDIS_REPLY_TYPE_INTEGER = 3,	// = #define REDIS_REPLY_INTEGER 3 in hiredis.h
-	REDIS_REPLY_TYPE_NIL = 4,		// = #define REDIS_REPLY_NIL 4 in hiredis.h
-	REDIS_REPLY_TYPE_STATUS = 5,	// = #define REDIS_REPLY_STATUS 5 in hiredis.h
-	REDIS_REPLY_TYPE_ERROR = 6		// = #define REDIS_REPLY_ERROR 6 in hiredis.h
-};
-
 class RedisReply;
 // ----------------------------------------------------------------------------
 //
@@ -58,8 +48,6 @@ class DllExport RedisReply
 {
 	friend class HiredisCpp;
 	friend class RedisReader;
-	//friend class RedisCommand;
-	//friend class RedisCallback;
 	friend class RedisReplyData;
 public:
 	virtual ~RedisReply();

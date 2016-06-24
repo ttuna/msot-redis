@@ -36,9 +36,38 @@ void RedisContext::cleanup()
 {
 	if (m_context.hiredis_ctx == 0) return;
 
-	if (m_is_async)
-		// redisAsyncDisconnect calls redisAsyncFree !!!
+	if (m_is_async && m_context.hiredis_async_ctx != 0)
+	{
 		redisAsyncDisconnect(m_context.hiredis_async_ctx);
-	else
+		m_context.hiredis_async_ctx = 0;
+	}
+	else if (!m_is_async && m_context.hiredis_ctx != 0)
+	{
 		redisFree(m_context.hiredis_ctx);
+		m_context.hiredis_ctx = 0;
+	}
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+bool RedisContext::isAsync() 
+{ 
+	return m_is_async; 
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+bool RedisContext::isBlocking() 
+{ 
+	return (m_is_async) ? false : (m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_BLOCK) ; 
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+bool RedisContext::isConnected() 
+{
+	return (m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_CONNECTED) ; 
 }

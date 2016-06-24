@@ -17,12 +17,9 @@ struct aeEventLoop;
 namespace HIREDIS_CPP
 {
 
-const int CONNECT_TIMEOUT_SEC = 5;
-const int MAX_COMMAND_ENTRIES = 100;
-
 class DllExport HiredisCpp
 {
-	friend class AsyncConnectThreadData;
+	friend class AsyncConnectThreadContext;
 public:
 	HiredisCpp();
 	virtual ~HiredisCpp();
@@ -36,25 +33,33 @@ public:
 
 	RedisReply* exec(const std::string &in_command_string, RedisCallback* in_callback = 0, void *in_pdata = 0);
 	RedisReply* exec(const std::vector<std::string> &in_command_vector);
+	int writePendingCommands();
 	RedisReply* getReply();
+	void discardReply();
 	static void freeRedisReply(RedisReply* in_reply);
 	
 private:
 	HiredisCpp(const HiredisCpp& other);
 	HiredisCpp& operator=(const HiredisCpp&);
 
-	RedisReader& getReader(const bool in_default = false);	// maybe not necessary ...
-	std::vector<RedisReply*> getPendingReplies();
+	std::vector<RedisReply*> getPendingReplies(const bool in_discard = false);
 
+	// low level API calls ...
+	int readRedisBuffer(redisReply** out_reply);
+
+	// callbacks frontend ...
+	RedisCallback* m_p_connect_callback;
+	RedisCallback* m_p_disconnect_callback;
+	// callbacks backend ...
 	static void backendConnectCallback(const struct redisAsyncContext* in_ctx, int status);
 	static void backendDisconnectCallback(const struct redisAsyncContext* in_ctx, int status);
 	static void backendCommandCallback(struct redisAsyncContext* in_ctx, void* in_reply, void* in_pdata);
-
+	
 	RedisContext m_redis_ctx;
-	RedisReader m_default_reader;
-	RedisCallback* m_p_connect_callback;
-	RedisCallback* m_p_disconnect_callback;
-	RedisCommandCache m_command_cache;
+	void * m_mutex_redis_ctx;
+
+	AsyncConnectThreadContext* m_p_thread_ctx;
+	void* m_mutex_thread_ctx;
 
 	void* m_thread_handle;
 	unsigned long m_thread_id;
