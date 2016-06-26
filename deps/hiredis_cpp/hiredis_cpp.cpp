@@ -10,7 +10,13 @@
 
 const int CONNECT_TIMEOUT_SEC = 5;
 const int MAX_COMMAND_ENTRIES = 100;
+const std::string PUBSUB_CMD = "pubsub";
+const std::string PUBLISH_CMD = "publish";
 const std::string SUBSCRIBE_CMD = "subscribe";
+const std::string PSUBSCRIBE_CMD = "psubscribe";
+const std::string UNSUBSCRIBE_CMD = "unsubscribe";
+const std::string PUNSUBSCRIBE_CMD = "punsubscribe";
+
 
 namespace HIREDIS_CPP {
 
@@ -394,7 +400,11 @@ RedisReply* HiredisCpp::exec(const std::string &in_command_string, RedisCallback
 	MutexLocker locker(m_mutex_redis_ctx);
 	if (locker.isLocked() == false) return false;
 
+	// check context ...
 	if (m_redis_ctx.isConnected() == false) return 0;
+
+	// basic check if command string is valid ...
+	if (checkCommandString(in_command_string) == false) return 0;
 
 	if (in_command_string.empty() == false)
 	{
@@ -408,24 +418,10 @@ RedisReply* HiredisCpp::exec(const std::string &in_command_string, RedisCallback
 		}
 		else
 		{
-			RedisCommand* command = new RedisCommand(in_command_string);
+			RedisCommand *command = prepareCommand(in_command_string, in_callback, in_pdata);
 			if (command == 0) return 0;
-			
-			command->m_p_callback = in_callback;
-			command->m_priv_data.pdata = in_pdata;
-			
-			std::string buffer(in_command_string);
-			std::transform(buffer.begin(), buffer.end(), buffer.begin(), ::tolower);
 
-			if(!buffer.compare(0, SUBSCRIBE_CMD.size(), SUBSCRIBE_CMD))
-				command->m_delete_after_callback_exec = false; // don't delete subscribe callback after first execution ...
-			else
-				command->m_delete_after_callback_exec = true; // self destruction ...
-			
-			if (redisAsyncCommand(m_redis_ctx.m_context.hiredis_async_ctx, (redisCallbackFn*)backendCommandCallback, &command->m_priv_data, command->m_command_string.data()) == REDIS_ERR)
-			{
-				std::cout << "HiredisCpp::exec - redisAsyncCommand failed for " << in_command_string << std::endl;
-			}
+			redisAsyncCommand(m_redis_ctx.m_context.hiredis_async_ctx, (redisCallbackFn*)backendCommandCallback, &command->m_priv_data, command->m_command_string.data());
 			return 0;
 		}
 	}
@@ -441,6 +437,7 @@ RedisReply* HiredisCpp::exec(const std::vector<std::string> &in_command_vector)
 	MutexLocker locker(m_mutex_redis_ctx);
 	if (locker.isLocked() == false) return false;
 
+	// check context ...
 	// pipeline commands are only available in sync blocking mode ...
 	if (m_redis_ctx.isConnected() == false) return 0;
 	if (m_redis_ctx.isBlocking() == false) return 0;
@@ -457,12 +454,11 @@ RedisReply* HiredisCpp::exec(const std::vector<std::string> &in_command_vector)
 			command_string = in_command_vector.at(i);
 			if (command_string.empty()) continue;
 
+			// basic check if command string is valid ...
+			if (checkCommandString(command_string) == false) continue;
+
 			rv = redisAppendCommand(m_redis_ctx.m_context.hiredis_ctx, command_string.data());
-			if (rv != REDIS_OK) 
-			{
-				std::cout << "HiredisCpp::exec - redisAppendCommand failed for " << command_string << std::endl;
-				continue;
-			}
+			if (rv != REDIS_OK) continue;
 		}
 
 		rep = getReply();
@@ -473,17 +469,99 @@ RedisReply* HiredisCpp::exec(const std::vector<std::string> &in_command_vector)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+RedisReply* HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_connect_callback )
+{
+	return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+RedisReply* HiredisCpp::subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_connect_callback)
+{
+	return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+RedisReply* HiredisCpp::unsubscribe(const std::string &in_channel)
+{
+	return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+RedisReply* HiredisCpp::unsubscribe(const std::vector<std::string> &in_channel_vector)
+{
+	return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+RedisReply* HiredisCpp::publish(const std::string &in_channel, const std::string &in_msg)
+{
+	return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+RedisCommand* HiredisCpp::prepareCommand(const std::string &in_command_string, RedisCallback* in_callback, void* in_pdata)
+{
+	RedisCommand* command = new RedisCommand(in_command_string);
+	if (command == 0) return 0;
+	
+	command->m_p_callback = in_callback;
+	command->m_priv_data.pdata = in_pdata;
+	command->m_delete_after_callback_exec = true; // self destruction ...
+
+	return command;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+bool HiredisCpp::checkCommandString(const std::string& in_command_string)
+{
+	if (in_command_string.empty()) return false;
+
+	std::string buffer(in_command_string);
+	std::transform(buffer.begin(), buffer.end(), buffer.begin(), ::tolower);
+
+	// PUB/SUB commands will get particular attention ...
+	if (!buffer.compare(0, PUBSUB_CMD.size(), PUBSUB_CMD))
+		return false;
+	else if (!buffer.compare(0, PUBLISH_CMD.size(), PUBLISH_CMD))
+		return false;
+	else if(!buffer.compare(0, SUBSCRIBE_CMD.size(), SUBSCRIBE_CMD))
+		return false;
+	else if (!buffer.compare(0, PSUBSCRIBE_CMD.size(), PSUBSCRIBE_CMD))
+		return false;
+	else if (!buffer.compare(0, UNSUBSCRIBE_CMD.size(), UNSUBSCRIBE_CMD))
+		return false;
+	else if (!buffer.compare(0, PUNSUBSCRIBE_CMD.size(), PUNSUBSCRIBE_CMD))
+		return false;
+
+	return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 int HiredisCpp::writePendingCommands()
 {
 	MutexLocker locker(m_mutex_redis_ctx);
 	if (locker.isLocked() == false) return false;
 
+	// check context ...
 	if (m_redis_ctx.isValid() == false) return 0;
 	if (m_redis_ctx.isBlocking() == true) return 0;	// will be done by __redisBlockForReply
 	if (m_redis_ctx.isAsync() == true) return 0;	// will be done by event loop
 
 	int done = 0;
-	
 	// write whole buffer ...
     do {
         if (redisBufferWrite(m_redis_ctx.m_context.hiredis_ctx, &done) == REDIS_ERR)
@@ -550,7 +628,7 @@ std::vector<RedisReply*> HiredisCpp::getPendingReplies(const bool in_discard)
 
 		if (reply == 0) break;
 
-		// drop all replies ...
+		// if not to drop all replies ...
 		if (in_discard == false)
 		{
 			RedisReply* rep = RedisReply::createReply(reply);
@@ -598,6 +676,7 @@ int HiredisCpp::readRedisBuffer(redisReply** out_reply)
 void HiredisCpp::freeRedisReply(RedisReply* in_reply)
 {
 	if (in_reply == 0) return;
+
 	in_reply->cleanup();
 	delete in_reply;
 }

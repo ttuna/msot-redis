@@ -100,7 +100,7 @@ std::string RedisReplyData::getStringValue() const
 				if (reply == 0) continue;
 
 				buffer += reply->getStringData();
-				if (i < m_arr.size() -1) buffer += "\n";
+				if (i < m_arr.size() -1) buffer += "\r\n";
 			}
 			return buffer;
 	}

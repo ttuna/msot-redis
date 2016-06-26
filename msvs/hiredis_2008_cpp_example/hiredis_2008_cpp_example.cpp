@@ -165,6 +165,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		// transmit all commands to server ...
 		client_2.writePendingCommands();	
 		// ------------------------------------------------------
+		Sleep(1); // it takes some time to get all the replies back from server ;-)
+		// ------------------------------------------------------
 		// get reply ...
 		reply_2 = client_2.getReply();
 		if (reply_2 != 0)

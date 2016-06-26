@@ -33,6 +33,12 @@ public:
 
 	RedisReply* exec(const std::string &in_command_string, RedisCallback* in_callback = 0, void *in_pdata = 0);
 	RedisReply* exec(const std::vector<std::string> &in_command_vector);
+	RedisReply* subscribe(const std::string &in_channel, RedisCallback* in_connect_callback = 0);
+	RedisReply* subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_connect_callback = 0);
+	RedisReply* unsubscribe(const std::string &in_channel);
+	RedisReply* unsubscribe(const std::vector<std::string> &in_channel_vector);
+	RedisReply* publish(const std::string &in_channel, const std::string &in_msg);
+
 	int writePendingCommands();
 	RedisReply* getReply();
 	void discardReply();
@@ -42,6 +48,8 @@ private:
 	HiredisCpp(const HiredisCpp& other);
 	HiredisCpp& operator=(const HiredisCpp&);
 
+	RedisCommand* prepareCommand(const std::string &in_command_string, RedisCallback* in_callback, void* in_pdata);
+	bool checkCommandString(const std::string& in_command_string);
 	std::vector<RedisReply*> getPendingReplies(const bool in_discard = false);
 
 	// low level API calls ...
