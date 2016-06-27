@@ -27,14 +27,7 @@ private:
 	RedisCommand(const RedisCommand& other);
 	RedisCommand& operator=(const RedisCommand&);
 
-	struct CallbackPrivateData {
-		void *pdata;			// the original private data - MUST be first member!!!
-		RedisCommand* command;	// this
-	} m_priv_data;
-
 	std::string m_command_string;
-	RedisCallback* m_p_callback;
-	bool m_delete_after_callback_exec;
 };
 
 }

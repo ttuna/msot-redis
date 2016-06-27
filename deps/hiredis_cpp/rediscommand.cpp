@@ -11,11 +11,8 @@ using namespace HIREDIS_CPP;
 //
 // ----------------------------------------------------------------------------
 RedisCommand::RedisCommand(const std::string &in_cmd) :
-	m_command_string(in_cmd),
-	m_p_callback(0),
-	m_delete_after_callback_exec(false)
+	m_command_string(in_cmd)
 {
-	m_priv_data.command = this;
 }
 
 RedisCommand::~RedisCommand()
@@ -38,9 +35,6 @@ bool RedisCommand::isValid() const
 void RedisCommand::cleanup()
 {
 	m_command_string = "";
-	m_p_callback = 0;
-	m_priv_data.pdata = 0;
-	m_priv_data.command = 0;
 }
 
 // ----------------------------------------------------------------------------

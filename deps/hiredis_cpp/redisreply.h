@@ -48,6 +48,7 @@ class DllExport RedisReply
 {
 	friend class HiredisCpp;
 	friend class RedisReader;
+	friend class RedisCallback;
 	friend class RedisReplyData;
 public:
 	virtual ~RedisReply();

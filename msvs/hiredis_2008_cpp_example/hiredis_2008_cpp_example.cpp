@@ -12,22 +12,22 @@ using namespace HIREDIS_CPP;
 // ----------------------------------------------------------------------------
 void connect_func(int status)
 {
-	std::cout << "connect_func - status: " << status << std::endl;
+	std::cout << "\nconnect_func - status: " << status << std::endl;
 }
 // ----------------------------------------------------------------------------
 void disconnect_func(int status)
 {
-	std::cout << "disconnect_func - status: " << status << std::endl;
+	std::cout << "\ndisconnect_func - status: " << status << std::endl;
 }
 // ----------------------------------------------------------------------------
-void data_func(RedisReply* in_reply, void* in_pdata)
+void command_func(RedisReply* in_reply, void* in_pdata)
 {
-	std::cout << "data_func - reply:\n" << in_reply->getStringData() << std::endl;
+	std::cout << "\ncommand_func - reply:\n" << in_reply->getStringData() << std::endl;
 }
 // ----------------------------------------------------------------------------
 void subscribe_func(RedisReply* in_reply, void* in_pdata)
 {
-	std::cout << "subscribe_func - reply:\n" << in_reply->getStringData() << std::endl;
+	std::cout << "\nsubscribe_func - reply:\n" << in_reply->getStringData() << std::endl;
 }
 // ----------------------------------------------------------------------------
 void print_reply(RedisReply* in_reply)
@@ -186,7 +186,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	// callbacks for async client ...
 	RedisCallback connect_callback(connect_func);
 	RedisCallback disconnect_callback(disconnect_func);
-	RedisCallback data_callback(data_func);
+	RedisCallback data_callback(command_func);
 	RedisCallback subscribe_callback(subscribe_func);
 
 	// async client ...
@@ -229,7 +229,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		else
 			std::cout << "client 1 - reply: NULL" << std::endl;
 		std::cout << "---" << std::endl;
-
 
 		//client_3.disconnect();
 	}

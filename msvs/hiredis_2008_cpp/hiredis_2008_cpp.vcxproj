@@ -108,6 +108,7 @@
     <ClInclude Include="..\..\deps\hiredis_cpp\rediscommand.h" />
     <ClInclude Include="..\..\deps\hiredis_cpp\rediscommandcache.h" />
     <ClInclude Include="..\..\deps\hiredis_cpp\rediscontext.h" />
+    <ClInclude Include="..\..\deps\hiredis_cpp\redishelper.h" />
     <ClInclude Include="..\..\deps\hiredis_cpp\redisreader.h" />
     <ClInclude Include="..\..\deps\hiredis_cpp\redisreply.h" />
   </ItemGroup>
@@ -115,6 +116,7 @@
     <ClCompile Include="..\..\deps\hiredis_cpp\hiredis_cpp.cpp" />
     <ClCompile Include="..\..\deps\hiredis_cpp\rediscallback.cpp" />
     <ClCompile Include="..\..\deps\hiredis_cpp\rediscommandcache.cpp" />
+    <ClCompile Include="..\..\deps\hiredis_cpp\redishelper.cpp" />
     <ClCompile Include="..\..\deps\hiredis_cpp\redisreader.cpp" />
     <ClCompile Include="..\..\deps\hiredis_cpp\rediscommand.cpp" />
     <ClCompile Include="..\..\deps\hiredis_cpp\rediscontext.cpp" />

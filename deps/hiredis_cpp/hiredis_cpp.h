@@ -12,21 +12,18 @@
 #include "redisreply.h"
 #include "global.h"
 
-struct aeEventLoop;
-
 namespace HIREDIS_CPP
 {
 
 class DllExport HiredisCpp
 {
-	friend class AsyncConnectThreadContext;
 public:
 	HiredisCpp();
 	virtual ~HiredisCpp();
 	
 	bool connect(const std::string &in_host, const int in_port, const bool in_blocking = true, const int in_timeout_sec = -1);
 	void* connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback = 0, RedisCallback* in_disconnect_callback = 0);
-	bool disconnect();
+	void disconnect();
 
 	int setTimeout(const int in_seconds);
 	int enableKeepAlive();
@@ -48,29 +45,19 @@ private:
 	HiredisCpp(const HiredisCpp& other);
 	HiredisCpp& operator=(const HiredisCpp&);
 
-	RedisCommand* prepareCommand(const std::string &in_command_string, RedisCallback* in_callback, void* in_pdata);
 	bool checkCommandString(const std::string& in_command_string);
+	RedisCommand* prepareCommand(const std::string &in_command_string, RedisCallback* in_callback, void* in_pdata);
+	RedisReply* execCommand(RedisCommand *in_command, RedisCallback* in_callback);
 	std::vector<RedisReply*> getPendingReplies(const bool in_discard = false);
 
 	// low level API calls ...
 	int readRedisBuffer(redisReply** out_reply);
-
-	// callbacks frontend ...
-	RedisCallback* m_p_connect_callback;
-	RedisCallback* m_p_disconnect_callback;
-	// callbacks backend ...
-	static void backendConnectCallback(const struct redisAsyncContext* in_ctx, int status);
-	static void backendDisconnectCallback(const struct redisAsyncContext* in_ctx, int status);
-	static void backendCommandCallback(struct redisAsyncContext* in_ctx, void* in_reply, void* in_pdata);
 	
-	RedisContext m_redis_ctx;
-	void * m_mutex_redis_ctx;
+	RedisContext* m_p_redis_ctx;
+	void* m_mutex_redis_ctx;
 
-	AsyncConnectThreadContext* m_p_thread_ctx;
-	void* m_mutex_thread_ctx;
-
-	void* m_thread_handle;
-	unsigned long m_thread_id;
+	RedisContext* m_p_pubsub_ctx;
+	void* m_mutex_pubsub_ctx;
 };
 
 } // namespace
