@@ -38,6 +38,12 @@ enum RedisReplyType {
 	REDIS_REPLY_TYPE_ERROR				= 6			// = #define REDIS_REPLY_ERROR 6 in hiredis.h
 };
 
+enum RedisCallbackType {
+	REDIS_CALLBACK_TYPE_UNKNOWN			= 0,
+	REDIS_CALLBACK_TYPE_STATUS			= 1,
+	REDIS_CALLBACK_TYPE_COMMAND			= 2
+};
+
 } // namespace HIREDIS_CPP
 
 #endif

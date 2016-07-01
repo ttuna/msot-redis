@@ -11,6 +11,11 @@
 #include <algorithm>
 #include <stdarg.h>
 
+#ifdef ERROR_ON_WRONG_CALLBACK_TYPE
+#undef ERROR_ON_WRONG_CALLBACK_TYPE
+#endif
+#define ERROR_ON_WRONG_CALLBACK_TYPE 1
+
 using namespace HIREDIS_CPP;
 
 // ----------------------------------------------------------------------------
@@ -70,6 +75,27 @@ void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, Re
 {
 	if (in_host.empty()) return 0;
 	if (in_port == 0) return 0;
+
+	if (in_connect_callback != 0 && in_connect_callback->callbackType() != REDIS_CALLBACK_TYPE_STATUS)
+	{
+#if ERROR_ON_WRONG_CALLBACK_TYPE
+		std::cout << "ERROR: connect callback is not a status callback! Abort ..." << std::endl;	// TODO: error handling & logging ...
+		return 0;
+#else
+		std::cout << "WARNING: connect callback is not a status callback! Callback will be reseted ..." << std::endl;	// TODO: error handling & logging ...
+		in_connect_callback = 0;
+#endif
+	}
+	if (in_disconnect_callback != 0 && in_disconnect_callback->callbackType() != REDIS_CALLBACK_TYPE_STATUS)
+	{
+#if ERROR_ON_WRONG_CALLBACK_TYPE
+		std::cout << "ERROR: disconnect callback is not a status callback! Abort ..." << std::endl;	// TODO: error handling & logging ...
+		return 0;
+#else
+		std::cout << "WARNING: disconnect callback is not a status callback! Callback will be reseted ..." << std::endl;	// TODO: error handling & logging ...
+		in_disconnect_callback = 0;
+#endif
+	}
 
 	MutexLocker locker(m_mutex_redis_ctx);
 	if (locker.isLocked() == false) return 0;
@@ -348,6 +374,17 @@ RedisReply* HiredisCpp::execCommand(const RedisContext& in_context, const RedisC
 	}
 	else
 	{
+		if (in_command.m_p_callback != 0 && in_command.m_p_callback->callbackType() != REDIS_CALLBACK_TYPE_COMMAND)
+		{
+#if ERROR_ON_WRONG_CALLBACK_TYPE
+			std::cout << "ERROR: \"" << command << "\" callback is not a command callback! Abort ..." << std::endl;	// TODO: error handling & logging ...
+			return 0;
+#else
+			std::cout << "WARNING: \"" << command << "\" callback is not a command callback! Callback will be reseted ..." << std::endl;	// TODO: error handling & logging ...
+			const_cast<RedisCommand &>(in_command).m_p_callback = 0;
+#endif
+		}
+
 		redisvAsyncCommand(in_context.m_context.hiredis_async_ctx, (redisCallbackFn*)RedisCallback::backendCommandCallback, pdata, command.c_str(), args);
 		in_command.freeArgVaList(args);
 

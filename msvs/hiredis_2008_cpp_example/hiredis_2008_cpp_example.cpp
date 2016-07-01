@@ -226,6 +226,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	RedisCallback disconnect_callback(disconnect_func);
 	RedisCallback command_callback(command_func, 0, false);
 	RedisCallback message_callback(message_func, 0, false);
+	RedisCallback wrong_callback(connect_func, 0, false);
 
 	// async client ...
 	HiredisCpp client_3;
@@ -245,6 +246,14 @@ int _tmain(int argc, _TCHAR* argv[])
 		std::cout << "client 3 - exec command: SET blumb 30" << std::endl;
 		command_3 << "SET blumb 30";
 		command_3.setCallback(&command_callback);
+		client_3.exec(command_3);
+		std::cout << "---" << std::endl;
+		command_3.cleanup();
+
+		// ------------------------------------------------------
+		std::cout << "client 3 - exec command: GET blumb" << std::endl;
+		command_3 << "GET blumb";
+		command_3.setCallback(&wrong_callback);
 		client_3.exec(command_3);
 		std::cout << "---" << std::endl;
 		command_3.cleanup();

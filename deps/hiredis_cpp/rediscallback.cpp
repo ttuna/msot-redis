@@ -66,6 +66,19 @@ void RedisCallback::cleanup()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+RedisCallbackType RedisCallback::callbackType() const
+{
+	if (m_p_command_callback != 0)
+		return REDIS_CALLBACK_TYPE_COMMAND;
+	else if (m_p_status_callback != 0)
+		return REDIS_CALLBACK_TYPE_STATUS;
+	else 
+		return REDIS_CALLBACK_TYPE_UNKNOWN;
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 void RedisCallback::setPrivateData(void* in_priv_data)
 {
 	m_priv_data.pdata = in_priv_data;
@@ -180,7 +193,11 @@ void RedisCallback::backendCommandCallback(const struct redisAsyncContext* in_ct
 	if (callback!= 0 && callback->m_p_command_callback != 0)
 		callback->m_p_command_callback(rep, priv_data->pdata);
 	else
-		delete rep;	// reply not deliverable - cleanup ...
+	{
+		// reply not deliverable - cleanup ...
+		rep->m_p_hiredis_reply = 0;	// avoid in_reply deletion ...
+		delete rep;	
+	}
 
 	if (callback->m_delete_after_exec)
 	{

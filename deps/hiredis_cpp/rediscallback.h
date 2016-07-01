@@ -30,6 +30,7 @@ public:
 	virtual ~RedisCallback();
 	bool isValid() const;
 	void cleanup();
+	RedisCallbackType callbackType() const;
 
 	void setPrivateData(void* in_priv_data);
 	void* getPrivateData();
