@@ -53,7 +53,8 @@ this should preceed the other arguments passed to redis. For instance:
 
     redis-server --service-install --service-name testServiceName redis.windows.conf --loglevel verbose 
 */
-
+#pragma warning(push)
+#pragma warning(disable: 4995) // name was marked as #pragma deprecated
 #include "win32_types.h"
 #include <windows.h>
 #include <windowsx.h>
@@ -69,15 +70,16 @@ this should preceed the other arguments passed to redis. For instance:
 #include <iostream>
 #include "Win32_RedisLog.h"
 #include "Win32_CommandLine.h"
-using namespace std;
-
 #include "Win32_SmartHandle.h"
+#pragma warning(pop)
 
 #pragma comment(lib, "advapi32.lib")
 
 #define DEFAULT_SERVICE_NAME "Redis"  
 #define MAX_SERVICE_NAME_LENGTH 256
 char g_serviceName[MAX_SERVICE_NAME_LENGTH + 1] = DEFAULT_SERVICE_NAME;
+
+using namespace std;
 
 SERVICE_STATUS g_ServiceStatus = { 0 };
 HANDLE g_ServiceStopEvent = INVALID_HANDLE_VALUE;

@@ -116,7 +116,6 @@ uint64_t GetHighResRelativeTime(double scale) {
 time_t gettimeofdaysecs(unsigned int *usec) {
     FILETIME ft;
     unsigned __int64 tmpres = 0;
-
     GetSystemTimeAsFileTime(&ft);
 
     tmpres |= ft.dwHighDateTime;
@@ -129,7 +128,7 @@ time_t gettimeofdaysecs(unsigned int *usec) {
     if (usec != NULL) {
         *usec = (unsigned int) (tmpres % 1000000UL);
     }
-    return (tmpres / 1000000UL);
+    return (time_t)(tmpres / 1000000UL);
 }
 
 int gettimeofday_fast(struct timeval *tv, struct timezone *tz) {

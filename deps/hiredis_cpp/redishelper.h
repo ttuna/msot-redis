@@ -32,14 +32,14 @@ private:
 
 // ----------------------------------------------------------------------------
 //
-// class RedisPrivateData
+// class RedisGlobalData
 //
 // ----------------------------------------------------------------------------
-class RedisPrivateData
+class RedisGlobalData
 {
 public:
-	static RedisPrivateData& getInstance();
-	virtual ~RedisPrivateData();
+	static RedisGlobalData& getInstance();
+	virtual ~RedisGlobalData();
 
 	RedisCallback* getConnectCallback();
 	void setConnectCallback(RedisCallback* in_callback);
@@ -47,13 +47,21 @@ public:
 	RedisCallback* getDisconnectCallback();
 	void setDisconnectCallback(RedisCallback* in_callback);
 
+	RedisCallback* getCommandCallback();
+	void setCommandCallback(RedisCallback* in_callback);
+
+	RedisCallback* getMessageCallback();
+	void setMessageCallback(RedisCallback* in_callback);
+
 private:
-	RedisPrivateData();
-	RedisPrivateData(const MutexLocker& other);
-	RedisPrivateData& operator=(const RedisPrivateData&);
+	RedisGlobalData();
+	RedisGlobalData(const MutexLocker& other);
+	RedisGlobalData& operator=(const RedisGlobalData&);
 
 	RedisCallback* m_connect_callback;
 	RedisCallback* m_disconnect_callback;
+	RedisCallback* m_command_callback;
+	RedisCallback* m_msg_callback;
 
 	void* m_mutex;
 };

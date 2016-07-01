@@ -336,7 +336,7 @@ static int _redisContextConnectTcp(redisContext *c, const char *addr, int port,
     if ((rv = getaddrinfo(addr,_port,&hints,&servinfo)) != 0) {
          hints.ai_family = AF_INET6;
          if ((rv = getaddrinfo(addr,_port,&hints,&servinfo)) != 0) {
-            __redisSetError(c,REDIS_ERR_OTHER,gai_strerror(rv));
+            __redisSetError(c,REDIS_ERR_OTHER,gai_strerrorA(rv));
             return REDIS_ERR;
         }
     }

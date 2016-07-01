@@ -13,6 +13,8 @@ namespace HIREDIS_CPP
 class RedisReply;
 // ----------------------------------------------------------------------------
 //
+// class RedisReplyData
+//
 // ----------------------------------------------------------------------------
 class DllExport RedisReplyData
 {
@@ -26,7 +28,7 @@ public:
 	std::string getErrorValue() const;
 	std::string getStatusValue() const;
 	std::string getStringValue() const;
-	int getIntValue() const;
+	long long getIntValue() const;
 	std::vector<RedisReply*> getVectorValue();
 
 private:
@@ -42,6 +44,8 @@ private:
 };
 
 // ----------------------------------------------------------------------------
+//
+// class RedisReply
 //
 // ----------------------------------------------------------------------------
 class DllExport RedisReply
@@ -60,7 +64,7 @@ public:
 	std::string getErrorData() const;
 	std::string getStatusData() const;
 	std::string getStringData() const;
-	int getIntData() const;
+	long long getIntData() const;
 	std::vector<RedisReply*> getVectorData();
 
 private:

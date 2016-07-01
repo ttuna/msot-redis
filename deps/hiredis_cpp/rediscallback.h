@@ -2,7 +2,6 @@
 #define _REDISCALLBACK_H_
 
 #include <iostream>
-#include <functional>
 #include "global.h"
 
 struct redisAsyncContext;
@@ -16,16 +15,27 @@ class RedisReply;
 typedef void (RedisStatusCallback)(int status);
 typedef void (RedisCommandCallback)(RedisReply* reply, void* privdata);
 
+// ----------------------------------------------------------------------------
+//
+// class RedisCallback
+//
+// ----------------------------------------------------------------------------
 class DllExport RedisCallback
 {
 	friend class HiredisCpp;
 	friend class AsyncConnectThread;
 public:
-	RedisCallback(RedisStatusCallback* in_status_callback);
-	RedisCallback(RedisCommandCallback* in_command_callback);
+	RedisCallback(RedisStatusCallback* in_status_callback, void* in_priv_data = 0, bool in_delete_after_exec = false);
+	RedisCallback(RedisCommandCallback* in_command_callback, void* in_priv_data = 0, bool in_delete_after_exec = false);
 	virtual ~RedisCallback();
 	bool isValid() const;
 	void cleanup();
+
+	void setPrivateData(void* in_priv_data);
+	void* getPrivateData();
+
+	void setDeleteAfterExec(const bool in_delete);
+	bool getDeleteAfterExec() const;
 
 private:
 	RedisCallback();
@@ -44,7 +54,7 @@ private:
 
 	struct CallbackPrivateData {
 		void *pdata;				// the original private data - MUST be first member!!!
-		RedisCallback* callback;	// this
+		RedisCallback* callback;	// will be set to this-pointer
 	} m_priv_data;
 
 	bool m_delete_after_exec;

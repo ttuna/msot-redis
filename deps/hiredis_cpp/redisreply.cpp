@@ -1,6 +1,9 @@
+#pragma warning(push)
+#pragma warning(disable: 4251) // class 'std::vector<_Ty>' needs to have dll-interface
 #include "redisreply.h"
+#pragma warning(pop)
 
-#include "../hiredis/win32_hiredis.h"
+#include "../hiredis/hiredis.h"
 
 #include <sstream>
 #include <algorithm>
@@ -17,7 +20,8 @@ using namespace HIREDIS_CPP;
 RedisReplyData::RedisReplyData() :
 	m_type(REDIS_REPLY_TYPE_UNKNOWN),
 	m_str(""),
-	m_int(0)
+	m_int(0),
+	m_arr(10, 0)
 {
 }
 
@@ -29,7 +33,8 @@ RedisReplyData::~RedisReplyData()
 RedisReplyData::RedisReplyData(const RedisReplyData& other) :
 	m_type(other.m_type),
 	m_str(other.m_str),
-	m_int(other.m_int)
+	m_int(other.m_int),
+	m_arr(other.m_arr)
 {
 }
 
@@ -38,6 +43,7 @@ RedisReplyData& RedisReplyData::operator=(const RedisReplyData& rhs)
 	m_type = rhs.m_type;
 	m_str = rhs.m_str;
 	m_int = rhs.m_int;
+	m_arr = rhs.m_arr;
 
 	return *this;
 }
@@ -94,7 +100,7 @@ std::string RedisReplyData::getStringValue() const
 			return os.str();
 		case REDIS_REPLY_TYPE_ARRAY :
 			std::string buffer;
-			for (int i=0; i<m_arr.size(); ++i)
+			for (unsigned int i=0; i<m_arr.size(); ++i)
 			{
 				RedisReply* reply = m_arr.at(i);
 				if (reply == 0) continue;
@@ -109,7 +115,7 @@ std::string RedisReplyData::getStringValue() const
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-int RedisReplyData::getIntValue() const
+long long RedisReplyData::getIntValue() const
 {
 	int ret = 0;
 	std::istringstream is;
@@ -202,7 +208,7 @@ RedisReply* RedisReply::createReply(const redisReply* in_reply)
 			rep = new RedisReply;
 			if (rep == 0) return 0;
 
-			for (int i=0; i<in_reply->elements; ++i)
+			for (unsigned int i=0; i<in_reply->elements; ++i)
 			{
 				RedisReply* buffer;
 				buffer = createReply(in_reply->element[i]);
@@ -294,7 +300,7 @@ std::string RedisReply::getStatusData() const
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-int RedisReply::getIntData() const
+long long RedisReply::getIntData() const
 {
 	return m_reply_data.getIntValue();
 }

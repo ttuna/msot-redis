@@ -9,6 +9,11 @@ namespace HIREDIS_CPP
 
 class RedisCommand;
 
+// ----------------------------------------------------------------------------
+//
+// class RedisCommandCache
+//
+// ----------------------------------------------------------------------------
 class DllExport RedisCommandCache
 {
 	friend class HiredisCpp;

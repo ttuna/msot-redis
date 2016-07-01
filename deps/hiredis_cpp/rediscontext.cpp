@@ -1,10 +1,15 @@
+#pragma warning(push)
+#pragma warning(disable: 4251) // class 'std::vector<_Ty>' needs to have dll-interface
 #include "rediscontext.h"
+#include "rediscallback.h"
 #include "hiredis_cpp.h"
 #include "redishelper.h"
+#pragma warning(pop)
 
-#include "../hiredis/win32_hiredis.h"
 #include "../hiredis/async.h"
 #include "../hiredis/adapters/ae.h"
+
+#include <Windows.h>
 
 namespace HIREDIS_CPP {
 
@@ -109,7 +114,7 @@ bool AsyncConnectThread::prepareThreadLoop()
 	if (m_p_event_loop == 0) return false;
 
 	// async connect to redis ...
-	redisAsyncContext* ctx = redisAsyncConnect(m_host.data(), m_port);
+	redisAsyncContext* ctx = redisAsyncConnect(m_host.c_str(), m_port);
 	if (ctx == 0) return false;
 
 	m_p_context->m_context.hiredis_async_ctx = ctx;
@@ -118,6 +123,8 @@ bool AsyncConnectThread::prepareThreadLoop()
 	redisAeAttach(m_p_event_loop, ctx);
 	redisAsyncSetConnectCallback(m_p_context->m_context.hiredis_async_ctx, &RedisCallback::backendConnectCallback);
 	redisAsyncSetDisconnectCallback(m_p_context->m_context.hiredis_async_ctx, &RedisCallback::backendDisconnectCallback);
+
+	return true;
 }
 // ----------------------------------------------------------------------------
 bool AsyncConnectThread::execThreadLoop()
@@ -174,7 +181,8 @@ RedisContext::RedisContext() :
 	m_is_async(false),
 	m_p_thread(0),
 	m_thread_handle(0),
-	m_thread_id(0)
+	m_thread_id(0),
+	m_port(0)
 {
 	m_context.hiredis_ctx = 0;
 	m_context.hiredis_async_ctx = 0;
@@ -214,6 +222,8 @@ void RedisContext::cleanup()
 	if (m_p_thread != 0)
 	{
 		m_p_thread->stopThreadLoop();
+		WaitForSingleObject(m_thread_handle, 1000);
+
 		delete m_p_thread;
 		m_p_thread = 0;
 	}
@@ -250,7 +260,7 @@ bool RedisContext::isAsync()
 // ----------------------------------------------------------------------------
 bool RedisContext::isBlocking() 
 { 
-	return (m_is_async) ? false : (m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_BLOCK); 
+	return (m_is_async) ? false : ((m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_BLOCK) != 0); 
 }
 
 // ----------------------------------------------------------------------------
@@ -258,7 +268,7 @@ bool RedisContext::isBlocking()
 // ----------------------------------------------------------------------------
 bool RedisContext::isConnected() 
 {
-	return (m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_CONNECTED); 
+	return (bool)((m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_CONNECTED) != 0); 
 }
 
 // ----------------------------------------------------------------------------
@@ -272,35 +282,40 @@ bool RedisContext::connect(const std::string &in_host, const int in_port, const 
 	if (in_blocking)
 	{
 		TIMEVAL tv = {(in_timeout_sec == -1) ? CONNECT_TIMEOUT_SEC : in_timeout_sec, 0};
-		ctx = redisConnectWithTimeout(in_host.data(), in_port, tv);
+		ctx = redisConnectWithTimeout(in_host.c_str(), in_port, tv);
 	}
 	else
 	{
-		ctx = redisConnectNonBlock(in_host.data(), in_port);
+		ctx = redisConnectNonBlock(in_host.c_str(), in_port);
 	}
 	if (ctx == 0) return false;
 
 	m_context.hiredis_ctx = ctx;
 	m_is_async = false;
+
+	return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void* RedisContext::connectAsync(const std::string &in_host, const int in_port)
+void* RedisContext::connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback, RedisCallback* in_disconnect_callback)
 {
 	if (in_host.empty()) return false;
 	if (in_port == 0) return false;
 
 	MutexLocker locker(m_mutex_thread);
 	if (locker.isLocked() == false) return 0;
-
+	
 	m_p_thread = new AsyncConnectThread;
 	if (m_p_thread == 0) return false;
 
 	m_p_thread->m_p_context = this;
 	m_p_thread->m_host = in_host;
 	m_p_thread->m_port = in_port;
+
+	m_connect_callback = in_connect_callback;
+	m_disconnect_callback = in_disconnect_callback;
 
 	if (locker.unlock() == false) return 0;
 

@@ -1,7 +1,10 @@
+#pragma warning(push)
+#pragma warning(disable: 4251) // class 'std::vector<_Ty>' needs to have dll-interface
 #include "redisreader.h"
 #include "redisreply.h"
+#pragma warning(pop)
 
-#include "../hiredis/win32_hiredis.h"
+#include "../hiredis/hiredis.h"
 
 using namespace HIREDIS_CPP;
 

@@ -12,6 +12,11 @@ namespace HIREDIS_CPP
 
 class RedisReply;
 
+// ----------------------------------------------------------------------------
+//
+// class RedisReader
+//
+// ----------------------------------------------------------------------------
 class DllExport RedisReader
 {
 	friend class HiredisCpp;
