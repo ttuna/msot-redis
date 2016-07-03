@@ -3,6 +3,12 @@
 
 #include "global.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <pthread.h>
+#endif
+
 struct redisContext;
 struct redisAsyncContext;
 struct aeEventLoop;

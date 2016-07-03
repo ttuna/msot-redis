@@ -3,6 +3,9 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <iostream> 
+
 #include "global.h"
 
 namespace HIREDIS_CPP

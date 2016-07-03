@@ -2,6 +2,7 @@
 #define _REDISREADER_H_
 
 #include <string>
+
 #include "redisreply.h"
 #include "global.h"
 
@@ -9,8 +10,6 @@ struct redisReader;
 
 namespace HIREDIS_CPP
 {
-
-class RedisReply;
 
 // ----------------------------------------------------------------------------
 //

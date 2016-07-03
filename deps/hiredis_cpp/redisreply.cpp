@@ -5,9 +5,6 @@
 
 #include "../hiredis/hiredis.h"
 
-#include <sstream>
-#include <algorithm>
-
 using namespace HIREDIS_CPP;
 // ----------------------------------------------------------------------------
 //

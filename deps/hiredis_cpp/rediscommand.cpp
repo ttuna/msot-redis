@@ -5,9 +5,6 @@
 #include "rediscallback.h"
 #include "hiredis_cpp.h"
 #pragma warning(pop)
-
-#include <algorithm>
-#include <iostream> 
  
 //using namespace std::tr1::placeholders; 
 

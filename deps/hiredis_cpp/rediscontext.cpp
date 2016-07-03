@@ -2,14 +2,12 @@
 #pragma warning(disable: 4251) // class 'std::vector<_Ty>' needs to have dll-interface
 #include "rediscontext.h"
 #include "rediscallback.h"
-#include "hiredis_cpp.h"
 #include "redishelper.h"
+#include "hiredis_cpp.h"
 #pragma warning(pop)
 
 #include "../hiredis/async.h"
 #include "../hiredis/adapters/ae.h"
-
-#include <Windows.h>
 
 namespace HIREDIS_CPP {
 

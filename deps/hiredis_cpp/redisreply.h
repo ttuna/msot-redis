@@ -1,9 +1,12 @@
 #ifndef _REDISREPLY_H_
 #define _REDISREPLY_H_
 
-#include "global.h"
 #include <string>
 #include <vector>
+#include <sstream>
+#include <algorithm>
+
+#include "global.h"
 
 struct redisReply;
 

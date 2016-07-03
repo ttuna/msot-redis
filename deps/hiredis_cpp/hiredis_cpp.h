@@ -2,8 +2,10 @@
 #define _HIREDIS_CPP_H_
 
 #include <string>
-//#include <queue>
-//#include <map>
+#include <iostream>
+#include <algorithm>
+#include <stdarg.h>
+
 #include "rediscontext.h"
 #include "redisreader.h"
 #include "rediscommand.h"
@@ -84,11 +86,20 @@ private:
 	
 	// redis command context ...
 	RedisContext m_redis_ctx;
+#ifdef _WIN32
 	void* m_mutex_redis_ctx;
+#else
+	pthread_mutex_t* m_mutex_redis_ctx;
+#endif
 
 	// redis pub/sub context ...
 	RedisContext m_pubsub_ctx;
+#ifdef _WIN32
 	void* m_mutex_pubsub_ctx;
+#else
+	pthread_mutex_t* m_mutex_pubsub_ctx;
+#endif
+
 };
 
 } // namespace

@@ -4,12 +4,12 @@
 #include "redishelper.h"
 #pragma warning(pop)
 
+#ifdef _WIN32
 #include "../hiredis/win32_hiredis.h"
+#else
+#include "../hiredis/hiredis.h"
+#endif
 #include "../hiredis/async.h"
-
-#include <iostream>
-#include <algorithm>
-#include <stdarg.h>
 
 #ifdef ERROR_ON_WRONG_CALLBACK_TYPE
 #undef ERROR_ON_WRONG_CALLBACK_TYPE
@@ -28,6 +28,7 @@ using namespace HIREDIS_CPP;
 // ----------------------------------------------------------------------------
 HiredisCpp::HiredisCpp() 
 {
+#ifdef _WIN32
 	m_mutex_redis_ctx = CreateMutex(NULL,		// default security attributes
 									FALSE,      // initially not owned
 									NULL);      // unnamed mutex
@@ -35,21 +36,53 @@ HiredisCpp::HiredisCpp()
 	m_mutex_pubsub_ctx = CreateMutex(NULL,		// default security attributes
 									FALSE,      // initially not owned
 									NULL);      // unnamed mutex
+#else
+	m_mutex_redis_ctx = new pthread_mutex_t;
+	if (m_mutex_redis_ctx != 0)
+	{
+		pthread_mutexattr_t attr;
+		pthread_mutexattr_init(&attr);
+		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init(m_mutex_redis_ctx, &attr);
+		pthread_mutexattr_destroy(&attr);
+	}
+
+	m_mutex_pubsub_ctx = new pthread_mutex_t;
+	if (m_mutex_pubsub_ctx != 0)
+	{
+		pthread_mutexattr_t attr;
+		pthread_mutexattr_init(&attr);
+		pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+		pthread_mutex_init(m_mutex_pubsub_ctx, &attr);
+		pthread_mutexattr_destroy(&attr);
+	}
+#endif
 }
 
 HiredisCpp::~HiredisCpp()
 {
+	disconnect();
+
 	if (m_mutex_pubsub_ctx)
 	{
+#ifdef _WIN32
 		CloseHandle(m_mutex_pubsub_ctx);
+#else
+		pthread_mutex_destroy(m_mutex_pubsub_ctx);
+		delete m_mutex_pubsub_ctx;
+#endif
 		m_mutex_pubsub_ctx = 0;
 	}
 	if (m_mutex_redis_ctx)
 	{
+#ifdef _WIN32
 		CloseHandle(m_mutex_redis_ctx);
+#else
+		pthread_mutex_destroy(m_mutex_redis_ctx);
+		delete m_mutex_redis_ctx;
+#endif
 		m_mutex_redis_ctx = 0;
 	}
-	disconnect();
 }
 
 // ----------------------------------------------------------------------------

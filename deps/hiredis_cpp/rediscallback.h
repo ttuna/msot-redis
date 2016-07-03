@@ -12,8 +12,14 @@ namespace HIREDIS_CPP
 
 class RedisReply;
 
+#if (__cplusplus <= 199711L)
 typedef void (RedisStatusCallback)(int status);
 typedef void (RedisCommandCallback)(RedisReply* reply, void* privdata);
+#else
+#include <functional>
+using RedisStatusCallback = std::function<void(int)>;
+using RedisCommandCallback = std::function<void(RedisReply*, void*)>;
+#endif
 
 // ----------------------------------------------------------------------------
 //

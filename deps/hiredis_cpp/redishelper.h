@@ -1,6 +1,13 @@
 #ifndef _REDISHELPER_H_
 #define _REDISHELPER_H_
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <pthread.h>
+#include <time.h>
+#endif
+
 namespace HIREDIS_CPP 
 {
 
@@ -19,12 +26,16 @@ public:
 
 	bool isLocked();
 	bool unlock();
-	bool relock();
+	bool lock();
 
 private:
 	MutexLocker(const MutexLocker& other);
 	MutexLocker& operator=(const MutexLocker&);
+#ifdef _WIN32
 	void* m_mutex;
+#else
+	pthread_mutex_t* m_mutex;
+#endif
 	unsigned long m_locked;
 	unsigned long m_timeout;
 };
@@ -63,7 +74,11 @@ private:
 	RedisCallback* m_command_callback;
 	RedisCallback* m_msg_callback;
 
+#ifdef _WIN32
 	void* m_mutex;
+#else
+	pthread_mutex_t* m_mutex;
+#endif
 };
 
 } // namespace HIREDIS_CPP
