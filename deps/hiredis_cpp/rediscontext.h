@@ -3,15 +3,11 @@
 
 #include "global.h"
 
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <pthread.h>
-#endif
-
 struct redisContext;
 struct redisAsyncContext;
 struct aeEventLoop;
+
+struct pthread_mutex_t;
 
 namespace HIREDIS_CPP
 {
@@ -58,9 +54,14 @@ private:
 	bool m_is_async;
 
 	AsyncConnectThread* m_p_thread;
+#ifdef _WIN32
 	void* m_mutex_thread;
 	void* m_thread_handle;
 	unsigned long m_thread_id;
+#else
+	pthread_mutex_t* m_mutex_thread;
+	pthread_t* m_thread_handle;
+#endif
 
 	RedisCallback* m_connect_callback;
 	RedisCallback* m_disconnect_callback;

@@ -4,6 +4,13 @@
 #include "rediscallback.h"
 #pragma warning(pop)
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <pthread.h>
+#include <time.h>
+#endif
+
 using namespace HIREDIS_CPP;
 
 // ----------------------------------------------------------------------------

@@ -1,12 +1,7 @@
 #ifndef _REDISHELPER_H_
 #define _REDISHELPER_H_
 
-#ifdef _WIN32
-#include <Windows.h>
-#else
-#include <pthread.h>
-#include <time.h>
-#endif
+struct pthread_mutex_t;
 
 namespace HIREDIS_CPP 
 {
@@ -73,6 +68,9 @@ private:
 	RedisCallback* m_disconnect_callback;
 	RedisCallback* m_command_callback;
 	RedisCallback* m_msg_callback;
+
+	// TODO: add global redis context & pub/sub context (threads) ...
+	// TODO: introduce switch in hiredis_cpp to toggle between client context and global context usage ...
 
 #ifdef _WIN32
 	void* m_mutex;

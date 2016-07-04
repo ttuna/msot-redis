@@ -48,9 +48,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	RedisCommand command_1;
 	RedisReply* reply_1;
 	std::vector<std::string> channels_1;
+	std::cout << "client 1 connecting ..." << std::endl;
 	if (client_1.connect("127.0.0.1", 6379) == false)
 	{
 		std::cout << "client 1 - connection failed! Exit ..." << std::endl;
+		client_1.disconnect();
 	}
 	else
 	{
@@ -177,6 +179,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	HiredisCpp client_2;
 	RedisCommand command_2;
 	RedisReply* reply_2;
+	std::cout << "client 2 connecting ..." << std::endl;
 	if (client_2.connect("127.0.0.1", 6379, false) == false)
 	{
 		std::cout << "client 2 - connection failed! Exit ..." << std::endl;
@@ -233,6 +236,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	RedisCommand command_3;
 	HANDLE thread_handle;
 	std::vector<std::string> channels_3;
+	std::cout << "client 3 connecting ..." << std::endl;
 	if ((thread_handle = client_3.connectAsync("127.0.0.1", 6379, &connect_callback, &disconnect_callback)) == 0)
 	{
 		std::cout << "client 3 - connection failed! Exit ..." << std::endl;
@@ -303,8 +307,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		channels_1.push_back("plapper");
 		channels_1.push_back("fluester");
 		client_1.publish(channels_1, "Once again from client_1");
-		channels_1.clear();
 		std::cout << "---" << std::endl;
+		channels_1.clear();
 
 		// ------------------------------------------------------
 
