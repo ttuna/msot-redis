@@ -64,10 +64,10 @@ private:
 	RedisGlobalData(const MutexLocker& other);
 	RedisGlobalData& operator=(const RedisGlobalData&);
 
-	RedisCallback* m_connect_callback;
-	RedisCallback* m_disconnect_callback;
-	RedisCallback* m_command_callback;
-	RedisCallback* m_msg_callback;
+	RedisCallback* m_p_connect_callback;
+	RedisCallback* m_p_disconnect_callback;
+	RedisCallback* m_p_command_callback;
+	RedisCallback* m_p_msg_callback;
 
 	// TODO: add global redis context & pub/sub context (threads) ...
 	// TODO: introduce switch in hiredis_cpp to toggle between client context and global context usage ...

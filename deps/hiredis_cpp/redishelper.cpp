@@ -109,10 +109,10 @@ RedisGlobalData& RedisGlobalData::getInstance()
 }
 
 RedisGlobalData::RedisGlobalData() :
-	m_connect_callback(0),
-	m_disconnect_callback(0),
-	m_command_callback(0),
-	m_msg_callback(0)
+	m_p_connect_callback(0),
+	m_p_disconnect_callback(0),
+	m_p_command_callback(0),
+	m_p_msg_callback(0)
 {
 #ifdef _WIN32
 	m_mutex = CreateMutex(NULL,		// default security attributes
@@ -153,7 +153,7 @@ RedisCallback* RedisGlobalData::getConnectCallback()
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return 0;
 
-	return m_connect_callback; 
+	return m_p_connect_callback; 
 }
 
 // ----------------------------------------------------------------------------
@@ -164,7 +164,7 @@ void RedisGlobalData::setConnectCallback(RedisCallback* in_callback)
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return;
 
-	m_connect_callback = in_callback; 
+	m_p_connect_callback = in_callback; 
 }
 
 // ----------------------------------------------------------------------------
@@ -175,7 +175,7 @@ RedisCallback* RedisGlobalData::getDisconnectCallback()
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return 0;
 
-	return m_disconnect_callback; 
+	return m_p_disconnect_callback; 
 }
 
 // ----------------------------------------------------------------------------
@@ -186,7 +186,7 @@ void RedisGlobalData::setDisconnectCallback(RedisCallback* in_callback)
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return;
 
-	m_disconnect_callback = in_callback; 
+	m_p_disconnect_callback = in_callback; 
 }
 
 // ----------------------------------------------------------------------------
@@ -197,7 +197,7 @@ RedisCallback* RedisGlobalData::getCommandCallback()
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return 0;
 
-	return m_command_callback; 
+	return m_p_command_callback; 
 }
 
 // ----------------------------------------------------------------------------
@@ -208,7 +208,7 @@ void RedisGlobalData::setCommandCallback(RedisCallback* in_callback)
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return;
 
-	m_command_callback = in_callback; 
+	m_p_command_callback = in_callback; 
 }
 
 // ----------------------------------------------------------------------------
@@ -219,7 +219,7 @@ RedisCallback* RedisGlobalData::getMessageCallback()
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return 0;
 
-	return m_msg_callback; 
+	return m_p_msg_callback; 
 }
 
 // ----------------------------------------------------------------------------
@@ -230,5 +230,5 @@ void RedisGlobalData::setMessageCallback(RedisCallback* in_callback)
 	MutexLocker lock(m_mutex);
 	if (lock.isLocked() == false) return;
 
-	m_msg_callback = in_callback; 
+	m_p_msg_callback = in_callback; 
 }

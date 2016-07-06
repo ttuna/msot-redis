@@ -14,6 +14,16 @@
 #include "redisreply.h"
 #include "global.h"
 
+#ifdef ERROR_ON_WRONG_CALLBACK_TYPE
+#undef ERROR_ON_WRONG_CALLBACK_TYPE
+#endif
+#define ERROR_ON_WRONG_CALLBACK_TYPE 1
+
+#ifdef ERROR_ON_PUBSUB_FAIL
+#undef ERROR_ON_PUBSUB_FAIL
+#endif
+#define ERROR_ON_PUBSUB_FAIL 1
+
 namespace HIREDIS_CPP
 {
 
@@ -29,9 +39,9 @@ public:
 	virtual ~HiredisCpp();
 	
 	// establish a sync connection in blocking/non-blocking mode ...
-	bool connect(const std::string &in_host, const int in_port, const bool in_blocking = true, const int in_timeout_sec = -1);
+	bool connect(const std::string &in_host, const int in_port, const bool in_blocking = true, const int in_timeout_sec = -1, const bool in_disable_pub_sub = false);
 	// establish a async connection ...
-	void* connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback = 0, RedisCallback* in_disconnect_callback = 0);
+	void* connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback = 0, RedisCallback* in_disconnect_callback = 0, const bool in_disable_pub_sub = false);
 	// release a sync/async connection ...
 	void disconnect();
 
@@ -45,20 +55,20 @@ public:
 	RedisReply* exec(const std::vector<RedisCommand*> &in_command_vector);
 	// subscribe to a channel - for each message received a message callback will be called ...
 	// receiving is always done in async mode ...
-	void subscribe(const std::string &in_channel, RedisCallback* in_message_callback = 0);
+	void subscribe(const std::string &in_channel, RedisCallback* in_message_callback = 0, const bool in_pattern_sub = false);
 	// subscribe to a list of channels - for each message received a message callback will be called ...
 	// receiving is always done in async mode ...
-	void subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_message_callback = 0);
+	void subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_message_callback = 0, const bool in_pattern_sub = false);
 	// unsubscribe a channel ...
-	void unsubscribe(const std::string &in_channel);
+	void unsubscribe(const std::string &in_channel, const bool in_pattern_sub = false);
 	// unsubscribe a list of channels ...
-	void unsubscribe(const std::vector<std::string> &in_channel_vector);
+	void unsubscribe(const std::vector<std::string> &in_channel_vector, const bool in_pattern_sub = false);
 	// publish a message to a specific channel ...
 	// sending is always done in async mode ...
 	void publish(const std::string &in_channel, const std::string &in_msg);
 	// publish a message to a list of channels ...
 	// sending is always done in async mode ...
-	void publish(const std::vector<std::string> &in_channel_vector, const std::string &in_msg);
+	void publish(const std::vector<::std::string> &in_channel_vector, const std::string &in_msg);
 
 	// write pending commands - only necessary in sync non-blocking mode ...
 	int writePendingCommands();

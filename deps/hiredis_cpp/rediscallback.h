@@ -7,19 +7,37 @@
 struct redisAsyncContext;
 struct redisReply;
 
-namespace HIREDIS_CPP
-{
+#define USE_STD_TR1_FUNCTION 1
 
+namespace HIREDIS_CPP {
 class RedisReply;
+typedef void (_RedisStatusCallback)(int status);
+typedef void (_RedisCommandCallback)(RedisReply* reply, void* privdata);
+}
 
 #if (__cplusplus <= 199711L)
-typedef void (RedisStatusCallback)(int status);
-typedef void (RedisCommandCallback)(RedisReply* reply, void* privdata);
+#if (USE_STD_TR1_FUNCTION)
+#include <functional>
+namespace HIREDIS_CPP {
+typedef std::tr1::function<_RedisStatusCallback> RedisStatusCallback;
+typedef std::tr1::function<_RedisCommandCallback> RedisCommandCallback;
+}
+#else
+namespace HIREDIS_CPP {
+typedef  _RedisStatusCallback* RedisStatusCallback;
+typedef _RedisCommandCallback* RedisCommandCallback;
+}
+#endif
 #else
 #include <functional>
-using RedisStatusCallback = std::function<void(int)>;
-using RedisCommandCallback = std::function<void(RedisReply*, void*)>;
+namespace HIREDIS_CPP {
+using RedisStatusCallback = std::function<_RedisCommandCallback>;
+using RedisCommandCallback = std::function<_RedisCommandCallback>;
+}
 #endif
+
+namespace HIREDIS_CPP
+{
 
 // ----------------------------------------------------------------------------
 //
@@ -31,8 +49,8 @@ class DllExport RedisCallback
 	friend class HiredisCpp;
 	friend class AsyncConnectThread;
 public:
-	RedisCallback(RedisStatusCallback* in_status_callback, void* in_priv_data = 0, bool in_delete_after_exec = false);
-	RedisCallback(RedisCommandCallback* in_command_callback, void* in_priv_data = 0, bool in_delete_after_exec = false);
+	RedisCallback(RedisStatusCallback in_status_callback, void* in_priv_data = 0, bool in_delete_after_exec = false);
+	RedisCallback(RedisCommandCallback in_command_callback, void* in_priv_data = 0, bool in_delete_after_exec = false);
 	virtual ~RedisCallback();
 	bool isValid() const;
 	void cleanup();
@@ -50,8 +68,8 @@ private:
 	RedisCallback& operator=(const RedisCallback&);
 
 	// frontend callback ...
-	RedisStatusCallback* m_p_status_callback;
-	RedisCommandCallback* m_p_command_callback;
+	RedisStatusCallback m_status_callback;
+	RedisCommandCallback m_command_callback;
 
 	// backend callbacks ...
 	static void backendConnectCallback(const struct redisAsyncContext* in_ctx, int status);

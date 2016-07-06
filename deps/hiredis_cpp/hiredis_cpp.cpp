@@ -11,16 +11,6 @@
 #endif
 #include "../hiredis/async.h"
 
-#ifdef ERROR_ON_WRONG_CALLBACK_TYPE
-#undef ERROR_ON_WRONG_CALLBACK_TYPE
-#endif
-#define ERROR_ON_WRONG_CALLBACK_TYPE 1
-
-#ifdef ERROR_ON_PUBSUB_FAIL
-#undef ERROR_ON_PUBSUB_FAIL
-#endif
-#define ERROR_ON_PUBSUB_FAIL 1
-
 using namespace HIREDIS_CPP;
 
 // ----------------------------------------------------------------------------
@@ -93,7 +83,7 @@ HiredisCpp::~HiredisCpp()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bool in_blocking, const int in_timeout_sec)
+bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bool in_blocking, const int in_timeout_sec, const bool in_disable_pub_sub)
 {
 	if (in_host.empty()) return false;
 	if (in_port == 0) return false;
@@ -108,10 +98,10 @@ bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bo
 		return false;
 	}
 	
-	if (connectPubSub(in_host, in_port) == 0)
+	if (in_disable_pub_sub == false && connectPubSub(in_host, in_port) == 0)
 	{
 		std::cout << "HiredisCpp::connect - pub/sub connection failed ..." << std::endl;
-#if  ERROR_ON_PUBSUB_FAIL
+#if ERROR_ON_PUBSUB_FAIL
 		return false;
 #endif
 	}
@@ -122,7 +112,7 @@ bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bo
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback, RedisCallback* in_disconnect_callback)
+void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback, RedisCallback* in_disconnect_callback, const bool in_disable_pub_sub)
 {
 	if (in_host.empty()) return 0;
 	if (in_port == 0) return 0;
@@ -161,7 +151,7 @@ void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, Re
 		return 0;
 	}
 
-	if (connectPubSub(in_host, in_port) == 0)
+	if (in_disable_pub_sub == false && connectPubSub(in_host, in_port) == 0)
 	{
 		std::cout << "HiredisCpp::connectAsync - pub/sub connection failed ..." << std::endl;
 #if  ERROR_ON_PUBSUB_FAIL
@@ -300,7 +290,7 @@ RedisReply* HiredisCpp::exec(const std::vector<RedisCommand*> &in_command_vector
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_message_callback )
+void HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_message_callback, const bool in_pattern_sub)
 {
 	if (in_channel.empty()) return;
 
@@ -313,7 +303,7 @@ void HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_mess
 		return;
 	}
 
-	RedisCommand command("SUBSCRIBE " + in_channel);
+	RedisCommand command(((in_pattern_sub == false) ? "SUBSCRIBE " : "PSUBSCRIBE ") + in_channel);
 	command.m_p_callback = in_message_callback;
 
 	execCommand(m_pubsub_ctx, command);
@@ -322,7 +312,7 @@ void HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_mess
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_message_callback)
+void HiredisCpp::subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_message_callback, const bool in_pattern_sub)
 {
 	std::string channel;
 
@@ -337,14 +327,14 @@ void HiredisCpp::subscribe(const std::vector<std::string> &in_channel_vector, Re
 		channel = in_channel_vector[i];
 		if (channel.empty()) continue;
 
-		subscribe(channel, in_message_callback);
+		subscribe(channel, in_message_callback, in_pattern_sub);
 	}
 }
 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::unsubscribe(const std::string &in_channel)
+void HiredisCpp::unsubscribe(const std::string &in_channel, const bool in_pattern_sub)
 {
 	if (in_channel.empty()) return;
 
@@ -357,8 +347,7 @@ void HiredisCpp::unsubscribe(const std::string &in_channel)
 		return;
 	}
 
-
-	RedisCommand command("UNSUBSCRIBE " + in_channel);
+	RedisCommand command(((in_pattern_sub == false) ? "UNSUBSCRIBE " : "PUNSUBSCRIBE ") + in_channel);
 
 	execCommand(m_pubsub_ctx, command);
 }
@@ -366,7 +355,7 @@ void HiredisCpp::unsubscribe(const std::string &in_channel)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::unsubscribe(const std::vector<std::string> &in_channel_vector)
+void HiredisCpp::unsubscribe(const std::vector<std::string> &in_channel_vector, const bool in_pattern_sub)
 {
 	std::string channel;
 
@@ -381,7 +370,7 @@ void HiredisCpp::unsubscribe(const std::vector<std::string> &in_channel_vector)
 		channel = in_channel_vector[i];
 		if (channel.empty()) continue;
 
-		unsubscribe(channel);
+		unsubscribe(channel, in_pattern_sub);
 	}
 }
 

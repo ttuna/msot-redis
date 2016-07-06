@@ -32,8 +32,8 @@ public:
 	bool isBlocking();
 	bool isConnected();
 
-	RedisCallback* getConnectionCallback() { return m_connect_callback; };
-	RedisCallback* getDisconnectionCallback() { return m_disconnect_callback; }
+	RedisCallback* getConnectionCallback() { return m_p_connect_callback; };
+	RedisCallback* getDisconnectionCallback() { return m_p_disconnect_callback; }
 
 private:
 	RedisContext();
@@ -63,8 +63,8 @@ private:
 	pthread_t* m_thread_handle;
 #endif
 
-	RedisCallback* m_connect_callback;
-	RedisCallback* m_disconnect_callback;
+	RedisCallback* m_p_connect_callback;
+	RedisCallback* m_p_disconnect_callback;
 	std::string m_host;
 	int m_port;
 };

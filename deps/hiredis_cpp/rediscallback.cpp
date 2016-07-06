@@ -14,26 +14,26 @@ using namespace HIREDIS_CPP;
 //
 // ----------------------------------------------------------------------------
 RedisCallback::RedisCallback() :
-	m_p_status_callback(0),
-	m_p_command_callback(0),
+	m_status_callback(0),
+	m_command_callback(0),
 	m_delete_after_exec(false)
 {
 	m_priv_data.pdata = 0;
 	m_priv_data.callback = this;
 }
 
-RedisCallback::RedisCallback(RedisStatusCallback* in_status_callback, void* in_priv_data, bool in_delete_after_exec) :
-	m_p_status_callback(in_status_callback),
-	m_p_command_callback(0),
+RedisCallback::RedisCallback(RedisStatusCallback in_status_callback, void* in_priv_data, bool in_delete_after_exec) :
+	m_status_callback(in_status_callback),
+	m_command_callback(0),
 	m_delete_after_exec(in_delete_after_exec)
 {
 	m_priv_data.pdata = in_priv_data;
 	m_priv_data.callback = this;
 }
 
-RedisCallback::RedisCallback(RedisCommandCallback* in_command_callback, void* in_priv_data, bool in_delete_after_exec) :
-	m_p_status_callback(0),
-	m_p_command_callback(in_command_callback),
+RedisCallback::RedisCallback(RedisCommandCallback in_command_callback, void* in_priv_data, bool in_delete_after_exec) :
+	m_status_callback(0),
+	m_command_callback(in_command_callback),
 	m_delete_after_exec(in_delete_after_exec)
 {
 	m_priv_data.pdata = in_priv_data;
@@ -50,7 +50,7 @@ RedisCallback::~RedisCallback()
 // ----------------------------------------------------------------------------
 bool RedisCallback::isValid() const
 {
-	if (m_p_status_callback == 0 && m_p_command_callback == 0) return false;
+	if (m_status_callback == 0 && m_command_callback == 0) return false;
 	return true;
 }
 
@@ -59,8 +59,8 @@ bool RedisCallback::isValid() const
 // ----------------------------------------------------------------------------
 void RedisCallback::cleanup()
 {
-	m_p_status_callback = 0;
-	m_p_command_callback = 0;
+	m_status_callback = 0;
+	m_command_callback = 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -68,9 +68,9 @@ void RedisCallback::cleanup()
 // ----------------------------------------------------------------------------
 RedisCallbackType RedisCallback::callbackType() const
 {
-	if (m_p_command_callback != 0)
+	if (m_command_callback != 0)
 		return REDIS_CALLBACK_TYPE_COMMAND;
-	else if (m_p_status_callback != 0)
+	else if (m_status_callback != 0)
 		return REDIS_CALLBACK_TYPE_STATUS;
 	else 
 		return REDIS_CALLBACK_TYPE_UNKNOWN;
@@ -123,16 +123,23 @@ void RedisCallback::backendConnectCallback(const struct redisAsyncContext* in_ct
 	RedisGlobalData& rgd = RedisGlobalData::getInstance();
 	callback = rgd.getConnectCallback();
 
-	if (callback!= 0 && callback->m_p_status_callback != 0)
-		callback->m_p_status_callback(in_status);
+	RedisStatusCallback cb;
+	if (callback != 0 && callback->m_status_callback != 0)
+	{
+		cb = callback->m_status_callback;
+		(cb)(in_status);
+	}
 
 	// call specific connect callback ...
 	RedisContext* ctx = (RedisContext*)in_ctx->data;
 	if (ctx == 0) return;
 
 	callback = ctx->getConnectionCallback();
-	if (callback != 0 && callback->m_p_status_callback != 0)
-		callback->m_p_status_callback(in_status);
+	if (callback != 0 && callback->m_status_callback != 0)
+	{
+		cb = callback->m_status_callback;
+		(cb)(in_status);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -150,16 +157,23 @@ void RedisCallback::backendDisconnectCallback(const struct redisAsyncContext* in
 	RedisGlobalData& rgd = RedisGlobalData::getInstance();
 	callback = rgd.getDisconnectCallback();
 
-	if (callback!= 0 && callback->m_p_status_callback != 0)
-		callback->m_p_status_callback(in_status);
+	RedisStatusCallback cb;
+	if (callback != 0 && callback->m_status_callback != 0)
+	{
+		cb = callback->m_status_callback;
+		(cb)(in_status);
+	}
 
 	// call specific disconnect callback ...
 	RedisContext* ctx = (RedisContext*)in_ctx->data;
 	if (ctx == 0) return;
 
 	callback = ctx->getDisconnectionCallback();
-	if (callback != 0 && callback->m_p_status_callback != 0)
-		callback->m_p_status_callback(in_status);
+	if (callback != 0 && callback->m_status_callback != 0)
+	{
+		cb = callback->m_status_callback;
+		(cb)(in_status);
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -183,15 +197,22 @@ void RedisCallback::backendCommandCallback(const struct redisAsyncContext* in_ct
 	RedisGlobalData& rgd = RedisGlobalData::getInstance();
 	callback = rgd.getCommandCallback();
 
-	if (callback!= 0 && callback->m_p_command_callback != 0)
-		callback->m_p_command_callback(rep, priv_data->pdata);
+	RedisCommandCallback cb;
+	if (callback!= 0)
+	{
+		cb = callback->m_command_callback;
+		(cb)(rep, priv_data->pdata);
+	}
 
 	// call specific command callback ...
 	callback = priv_data->callback;
 	if (callback == 0) return;
 
-	if (callback!= 0 && callback->m_p_command_callback != 0)
-		callback->m_p_command_callback(rep, priv_data->pdata);
+	if (callback->m_command_callback != 0)
+	{
+		cb = callback->m_command_callback;
+		(cb)(rep, priv_data->pdata);
+	}
 	else
 	{
 		// reply not deliverable - cleanup ...
