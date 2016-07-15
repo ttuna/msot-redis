@@ -28,9 +28,9 @@ public:
 	bool isValid() const;
 	void cleanup();
 	
-	bool isAsync();
-	bool isBlocking();
-	bool isConnected();
+	bool isAsync() const;
+	bool isBlocking() const;
+	bool isConnected() const;
 
 	RedisCallback* getConnectionCallback() { return m_p_connect_callback; };
 	RedisCallback* getDisconnectionCallback() { return m_p_disconnect_callback; }

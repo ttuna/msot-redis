@@ -44,6 +44,7 @@ void print_reply(RedisReply* in_reply)
 }
 // ----------------------------------------------------------------------------
 
+
 // ----------------------------------------------------------------------------
 // class CallbackFunctions
 // ----------------------------------------------------------------------------
@@ -67,7 +68,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	RedisReply* reply_1;
 	std::vector<std::string> channels_1;
 	std::cout << "client 1 connecting ..." << std::endl;
-	if (client_1.connect("127.0.0.1", 6379) == false)
+	if (client_1.connect("127.0.0.1", 6379, true, true) == false)
 	{
 		std::cout << "client 1 - connection failed! Exit ..." << std::endl;
 		client_1.disconnect();
@@ -225,7 +226,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		// ------------------------------------------------------
 		// transmit all commands to server ...
-		client_2.writePendingCommands();
+		//client_2.writePendingCommands(); // no longer necassary - writePendingCommands() will be called in getReply() ...
 
 		// ------------------------------------------------------
 		// get reply ...
@@ -282,7 +283,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	HANDLE thread_handle;
 	std::vector<std::string> channels_3;
 	std::cout << "client 3 connecting ..." << std::endl;
-	if ((thread_handle = client_3.connectAsync("127.0.0.1", 6379, (RedisCallback*)&connect_callback, (RedisCallback*)&disconnect_callback)) == 0)
+	if ((thread_handle = client_3.connectAsync("127.0.0.1", 6379, (RedisCallback*)&connect_callback, (RedisCallback*)&disconnect_callback, true)) == 0)
 	{
 		std::cout << "client 3 - connection failed! Exit ..." << std::endl;
 	}

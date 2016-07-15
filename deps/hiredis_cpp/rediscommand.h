@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream> 
+#include <sstream>
 
 #include "global.h"
 
@@ -75,6 +76,18 @@ public:
 	friend RedisCommand& operator<<(RedisCommand& lhs, const char* rhs)
 	{
 		lhs.m_command_tokens.push_back(rhs);
+		return lhs;
+	}
+
+	// ----------------------------------------------------------------------------
+	// not a member !!!
+	template <typename T>
+	friend RedisCommand& operator<<(RedisCommand& lhs, const T &rhs)
+	{
+		std::stringstream ss;
+		ss << rhs;
+
+		lhs.m_command_tokens.push_back(ss.str());
 		return lhs;
 	}
 

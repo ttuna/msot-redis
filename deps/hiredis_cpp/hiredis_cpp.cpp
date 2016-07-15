@@ -83,11 +83,11 @@ HiredisCpp::~HiredisCpp()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bool in_blocking, const int in_timeout_sec, const bool in_disable_pub_sub)
+bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bool in_blocking, const bool in_enable_pub_sub, const int in_timeout_sec)
 {
 	if (in_host.empty()) return false;
 	if (in_port == 0) return false;
-	if (isServerRunning() == false) return false;
+	if (HiredisCpp::isServerRunning() == false) return false;
 
 	MutexLocker locker(m_mutex_redis_ctx);
 	if (locker.isLocked() == false) return false;
@@ -98,7 +98,7 @@ bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bo
 		return false;
 	}
 	
-	if (in_disable_pub_sub == false && connectPubSub(in_host, in_port) == 0)
+	if (in_enable_pub_sub == true && connectPubSub(in_host, in_port) == 0)
 	{
 		std::cout << "HiredisCpp::connect - pub/sub connection failed ..." << std::endl;
 #if ERROR_ON_PUBSUB_FAIL
@@ -112,11 +112,11 @@ bool HiredisCpp::connect(const std::string &in_host, const int in_port, const bo
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback, RedisCallback* in_disconnect_callback, const bool in_disable_pub_sub)
+void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, RedisCallback* in_connect_callback, RedisCallback* in_disconnect_callback, const bool in_enable_pub_sub)
 {
 	if (in_host.empty()) return 0;
 	if (in_port == 0) return 0;
-	if (isServerRunning() == false) return 0;
+	if (HiredisCpp::isServerRunning() == false) return 0;
 
 	if (in_connect_callback != 0 && in_connect_callback->callbackType() != REDIS_CALLBACK_TYPE_STATUS)
 	{
@@ -151,11 +151,11 @@ void* HiredisCpp::connectAsync(const std::string &in_host, const int in_port, Re
 		return 0;
 	}
 
-	if (in_disable_pub_sub == false && connectPubSub(in_host, in_port) == 0)
+	if (in_enable_pub_sub == true && connectPubSub(in_host, in_port) == 0)
 	{
 		std::cout << "HiredisCpp::connectAsync - pub/sub connection failed ..." << std::endl;
 #if  ERROR_ON_PUBSUB_FAIL
-		return false;
+		return 0;
 #endif
 	}
 
@@ -169,7 +169,7 @@ void* HiredisCpp::connectPubSub(const std::string &in_host, const int in_port)
 {	
 	MutexLocker locker(m_mutex_pubsub_ctx);
 	if (locker.isLocked() == false) return 0;
-	if (isServerRunning() == false) return 0;
+	if (HiredisCpp::isServerRunning() == false) return 0;
 
 	void* thread_handle = m_pubsub_ctx.connectAsync(in_host, in_port, 0, 0);
 
@@ -208,6 +208,22 @@ bool HiredisCpp::isServerRunning()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
+bool HiredisCpp::isPubSubEnabled() const
+{
+	return m_pubsub_ctx.isConnected();
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
+bool HiredisCpp::isConnected() const
+{
+	return m_redis_ctx.isConnected();
+}
+
+// ----------------------------------------------------------------------------
+//
+// ----------------------------------------------------------------------------
 int HiredisCpp::setTimeout(const int in_seconds)
 {
 	TIMEVAL tv = {in_seconds, 0};
@@ -233,7 +249,7 @@ int HiredisCpp::enableKeepAlive()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReply* HiredisCpp::exec(const RedisCommand& in_command)
+RedisReply* HiredisCpp::exec(const RedisCommand& in_command) const
 {
 	if (in_command.isValid() == false) return 0;
 
@@ -253,7 +269,7 @@ RedisReply* HiredisCpp::exec(const RedisCommand& in_command)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReply* HiredisCpp::exec(const std::vector<RedisCommand*> &in_command_vector)
+RedisReply* HiredisCpp::exec(const std::vector<RedisCommand*> &in_command_vector) const
 {
 	if (in_command_vector.size() <= 0) return 0;
 
@@ -290,7 +306,7 @@ RedisReply* HiredisCpp::exec(const std::vector<RedisCommand*> &in_command_vector
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_message_callback, const bool in_pattern_sub)
+void HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_message_callback, const bool in_pattern_sub) const
 {
 	if (in_channel.empty()) return;
 
@@ -312,7 +328,7 @@ void HiredisCpp::subscribe(const std::string &in_channel, RedisCallback* in_mess
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_message_callback, const bool in_pattern_sub)
+void HiredisCpp::subscribe(const std::vector<std::string> &in_channel_vector, RedisCallback* in_message_callback, const bool in_pattern_sub) const
 {
 	std::string channel;
 
@@ -334,7 +350,7 @@ void HiredisCpp::subscribe(const std::vector<std::string> &in_channel_vector, Re
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::unsubscribe(const std::string &in_channel, const bool in_pattern_sub)
+void HiredisCpp::unsubscribe(const std::string &in_channel, const bool in_pattern_sub) const
 {
 	if (in_channel.empty()) return;
 
@@ -355,7 +371,7 @@ void HiredisCpp::unsubscribe(const std::string &in_channel, const bool in_patter
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::unsubscribe(const std::vector<std::string> &in_channel_vector, const bool in_pattern_sub)
+void HiredisCpp::unsubscribe(const std::vector<std::string> &in_channel_vector, const bool in_pattern_sub) const
 {
 	std::string channel;
 
@@ -377,7 +393,7 @@ void HiredisCpp::unsubscribe(const std::vector<std::string> &in_channel_vector, 
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::publish(const std::string &in_channel, const std::string &in_msg)
+void HiredisCpp::publish(const std::string &in_channel, const std::string &in_msg) const
 {
 	if (in_channel.empty()) return;
 	if (in_msg.empty()) return;
@@ -400,7 +416,7 @@ void HiredisCpp::publish(const std::string &in_channel, const std::string &in_ms
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::publish(const std::vector<std::string> &in_channel_vector, const std::string &in_msg)
+void HiredisCpp::publish(const std::vector<std::string> &in_channel_vector, const std::string &in_msg) const
 {
 	std::string channel;
 
@@ -422,7 +438,7 @@ void HiredisCpp::publish(const std::vector<std::string> &in_channel_vector, cons
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool HiredisCpp::checkCommand(const RedisCommand& in_command)
+bool HiredisCpp::checkCommand(const RedisCommand& in_command) const
 {
 	if (in_command.isValid() == false) return false;	
 
@@ -452,7 +468,7 @@ bool HiredisCpp::checkCommand(const RedisCommand& in_command)
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReply* HiredisCpp::execCommand(const RedisContext& in_context, const RedisCommand &in_command)
+RedisReply* HiredisCpp::execCommand(const RedisContext& in_context, const RedisCommand &in_command) const
 {
 	// prepare command string ...
 	std::string command = in_command.getCommand();
@@ -498,17 +514,17 @@ RedisReply* HiredisCpp::execCommand(const RedisContext& in_context, const RedisC
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-int HiredisCpp::writePendingCommands()
+int HiredisCpp::writePendingCommands() const
 {
 	MutexLocker locker(m_mutex_redis_ctx);
 	if (locker.isLocked() == false) return false;
 
 	// check context ...
-	if (m_redis_ctx.isValid() == false) return 0;
-	if (m_redis_ctx.isConnected() == false) return 0;
+	if (m_redis_ctx.isValid() == false) return REDIS_ERR;
+	if (m_redis_ctx.isConnected() == false) return REDIS_ERR;
 	// write commands only in sync non-blocking mode ...
-	if (m_redis_ctx.isBlocking() == true) return 0;	// will be done by __redisBlockForReply ...
-	if (m_redis_ctx.isAsync() == true) return 0;	// will be done by event loop ...
+	if (m_redis_ctx.isBlocking() == true) return REDIS_OK;	// will be done by __redisBlockForReply ...
+	if (m_redis_ctx.isAsync() == true) return REDIS_OK;	// will be done by event loop ...
 
 	int done = 0;
 	// write whole buffer ...
@@ -525,13 +541,16 @@ int HiredisCpp::writePendingCommands()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-RedisReply* HiredisCpp::getReply()
+RedisReply* HiredisCpp::getReply() const
 {
 	MutexLocker locker(m_mutex_redis_ctx);
 	if (locker.isLocked() == false) return false;
 
 	if (m_redis_ctx.isValid() == false) return 0;
 	if (m_redis_ctx.isConnected() == false) return 0;
+
+	// for user convenience ...
+	writePendingCommands();
 
 	// check if there is any return data ...
 	std::vector<RedisReply*> replies = getPendingReplies(false);
@@ -550,7 +569,7 @@ RedisReply* HiredisCpp::getReply()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-void HiredisCpp::discardReply()
+void HiredisCpp::discardReply() const
 {
 	getPendingReplies(true);
 }
@@ -558,7 +577,7 @@ void HiredisCpp::discardReply()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-std::vector<RedisReply*> HiredisCpp::getPendingReplies(const bool in_discard)
+std::vector<RedisReply*> HiredisCpp::getPendingReplies(const bool in_discard) const
 {
 	int rv = REDIS_OK;
 	redisReply* reply = 0;
@@ -599,7 +618,7 @@ std::vector<RedisReply*> HiredisCpp::getPendingReplies(const bool in_discard)
 // ----------------------------------------------------------------------------
 // 
 // ----------------------------------------------------------------------------
-int HiredisCpp::readRedisBuffer(redisReply** out_reply)
+int HiredisCpp::readRedisBuffer(redisReply** out_reply) const
 {
 	// reset output ...
 	if (out_reply != NULL) *out_reply = NULL;

@@ -315,7 +315,7 @@ void RedisContext::cleanup()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool RedisContext::isAsync() 
+bool RedisContext::isAsync() const
 { 
 	return m_is_async; 
 }
@@ -323,7 +323,7 @@ bool RedisContext::isAsync()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool RedisContext::isBlocking() 
+bool RedisContext::isBlocking() const
 { 
 	return (m_is_async) ? false : (m_context.hiredis_ctx && (m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_BLOCK) != 0); 
 }
@@ -331,7 +331,7 @@ bool RedisContext::isBlocking()
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
-bool RedisContext::isConnected() 
+bool RedisContext::isConnected() const
 {
 	return (bool)(m_context.hiredis_ctx && (m_context.hiredis_ctx->flags & REDIS_CONTEXT_FLAG_CONNECTED) != 0); 
 }

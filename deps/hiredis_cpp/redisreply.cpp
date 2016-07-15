@@ -68,14 +68,62 @@ RedisReplyType RedisReplyData::getValueType() const
 // ----------------------------------------------------------------------------
 std::string RedisReplyData::getErrorValue() const
 {
-	return m_str;
+	switch(m_type)
+	{
+		case REDIS_REPLY_TYPE_UNKNOWN :
+		case REDIS_REPLY_TYPE_NIL :
+		case REDIS_REPLY_TYPE_STRING :
+		case REDIS_REPLY_TYPE_STATUS :
+		case REDIS_REPLY_TYPE_INTEGER:
+			break;
+		case REDIS_REPLY_TYPE_ERROR :
+			return m_str;
+		case REDIS_REPLY_TYPE_ARRAY :
+		{
+			std::string buffer;
+			for (unsigned int i=0; i<m_arr.size(); ++i)
+			{
+				RedisReply* reply = m_arr.at(i);
+				if (reply == 0) continue;
+
+				buffer += reply->getStringData();
+				if (i < m_arr.size() -1) buffer += "\r\n";
+			}
+			return buffer;
+		} break;
+	}
+	return std::string("");
 }
 // ----------------------------------------------------------------------------
 //
 // ----------------------------------------------------------------------------
 std::string RedisReplyData::getStatusValue() const
 {
-	return m_str;
+		switch(m_type)
+	{
+		case REDIS_REPLY_TYPE_UNKNOWN :
+		case REDIS_REPLY_TYPE_NIL :
+		case REDIS_REPLY_TYPE_STRING :
+		case REDIS_REPLY_TYPE_STATUS :
+		case REDIS_REPLY_TYPE_INTEGER:
+			break;
+		case REDIS_REPLY_TYPE_ERROR :
+			return m_str;
+		case REDIS_REPLY_TYPE_ARRAY :
+		{
+			std::string buffer;
+			for (unsigned int i=0; i<m_arr.size(); ++i)
+			{
+				RedisReply* reply = m_arr.at(i);
+				if (reply == 0) continue;
+
+				buffer += reply->getStringData();
+				if (i < m_arr.size() -1) buffer += "\r\n";
+			}
+			return buffer;
+		} break;
+	}
+	return std::string("");
 }
 // ----------------------------------------------------------------------------
 //
@@ -96,6 +144,7 @@ std::string RedisReplyData::getStringValue() const
 			os << m_int;
 			return os.str();
 		case REDIS_REPLY_TYPE_ARRAY :
+		{
 			std::string buffer;
 			for (unsigned int i=0; i<m_arr.size(); ++i)
 			{
@@ -106,6 +155,7 @@ std::string RedisReplyData::getStringValue() const
 				if (i < m_arr.size() -1) buffer += "\r\n";
 			}
 			return buffer;
+		} break;
 	}
 	return std::string("");
 }
@@ -130,7 +180,11 @@ long long RedisReplyData::getIntValue() const
 		case REDIS_REPLY_TYPE_INTEGER:
 			return m_int;
 		case REDIS_REPLY_TYPE_ARRAY :
-			break;
+		{
+			RedisReply* reply = m_arr.at(0);
+			if (reply == 0) return 0;
+			return reply->getIntData();
+		} break;
 	}
 	return ret;
 }
@@ -251,6 +305,7 @@ void RedisReply::cleanup()
 	if (m_p_hiredis_reply == 0) return;
 
 	freeReplyObject(m_p_hiredis_reply);
+	m_reply_data.cleanup();
 	m_p_hiredis_reply = 0;
 }
 
