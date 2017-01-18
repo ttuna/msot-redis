@@ -147,6 +147,7 @@ bool AsyncConnectThread::prepareThreadLoop()
 	m_p_context->m_context.hiredis_async_ctx = ctx;
 	m_p_context->m_is_async = true;
 
+	// async properties ...
 	redisAeAttach(m_p_event_loop, ctx);
 	redisAsyncSetConnectCallback(m_p_context->m_context.hiredis_async_ctx, &RedisCallback::backendConnectCallback);
 	redisAsyncSetDisconnectCallback(m_p_context->m_context.hiredis_async_ctx, &RedisCallback::backendDisconnectCallback);
